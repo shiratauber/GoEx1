@@ -1,19 +1,28 @@
 package CodeWriter
 
-/*
 import (
+	"log"
 	"os"
 )
 
 type CodeWriter struct {
-	inputFile string
-	file      *os.File
-	current   string
+	outputFile string
+	file       *os.File
+	current    string
 }
 
 func New(path string) CodeWriter {
-	f, err := os.Open(path)
+	oFile, err := os.Create(path + ".asm")
 	check(err)
-	input := parser{path, f, " "}
-	return input
-}*/
+	//open the output file
+	myFile, err := os.OpenFile(oFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
+	check(err)
+	output := CodeWriter{path, myFile, " "}
+	return output
+}
+
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
