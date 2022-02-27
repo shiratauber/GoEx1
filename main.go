@@ -1,15 +1,31 @@
 package main
 
 import (
-	"GoEx1/parser"
+	"GoEx1/CodeWriter"
+	"GoEx1/Parser"
+	"bufio"
 	"fmt"
-	//"GoEx1/CodeWriter"
 )
 
 func main() {
 	var path string
 	fmt.Scanln(&path)
-	p := parser.New(path)
-	_ = p
+	pars := parser.New(path)
+	code := CodeWriter.New(path)
+	scanner := bufio.NewScanner(pars.File)
+	for true {
+		if parser.HasMoreCommands(pars, scanner) {
+			parser.Advance(scanner, pars)
+			if parser.CommandType(pars) == "C_ARITHMETIC" {
+				CodeWriter.WriteArithmetic(pars.Current, code)
+			} else if parser.CommandType(pars) == "C_PUSH" {
+				CodeWriter.WritePushPop(parser.CommandType(pars), parser.Arg1(pars), parser.Arg2(pars), code)
+			}
+		} else {
+			break
+		}
+	}
+	CodeWriter.Close(code)
+	//_ = p
 
 }

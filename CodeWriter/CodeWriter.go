@@ -14,11 +14,16 @@ type CodeWriter struct {
 }
 
 func New(path string) CodeWriter {
-	oFile, err := os.Create(path + ".asm")
-	check(err)
+	var split1 []string = strings.Split(path, ".")
+	var withoutLast []string = split1[:len(split1)-1]
+	//var withLast string = strings.Join(withoutLast," ")
+	var split2 []string = strings.Split(withoutLast[0], "\\")
+	var last string = split2[len(split2)-1]
+	oFile, err := os.Create(last + ".asm")
+	Check(err)
 	//open the output file
 	myFile, err := os.OpenFile(oFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
-	check(err)
+	Check(err)
 	output := CodeWriter{path, myFile, " "}
 	return output
 }
@@ -26,13 +31,13 @@ func SetFileName(c CodeWriter, s string) {
 	c.outputFile = s
 
 }
-func check(err error) {
+func Check(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func writeArithmetic(command string, c CodeWriter) {
+func WriteArithmetic(command string, c CodeWriter) {
 	var splitt []string = strings.Split(command, " ")
 	var action string = splitt[0]
 	switch action {

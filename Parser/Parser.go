@@ -4,16 +4,17 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type parser struct {
 	inputFile string
-	file      *os.File
-	current   string
+	File      *os.File
+	Current   string
 }
 
-func check(err error) {
+func Check(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,29 +22,31 @@ func check(err error) {
 
 func New(path string) parser {
 	f, err := os.Open(path)
-	check(err)
+	Check(err)
 	input := parser{path, f, " "}
 	return input
 }
 
-func hasMoreCommands(p parser, s *bufio.Scanner) bool {
+func HasMoreCommands(p parser, s *bufio.Scanner) bool {
 	return s.Scan()
 }
 
-func advance(s *bufio.Scanner, p parser) {
-	p.current = s.Text()
+func Advance(s *bufio.Scanner, p parser) {
+	p.Current = s.Text()
 }
 
-func commandType(p parser) string {
-	var splitt []string = strings.Split(p.current, " ")
+func CommandType(p parser) string {
+	var splitt []string = strings.Split(p.Current, " ")
 
-	if wordInArithmetic(splitt[0]) {
+	if WordInArithmetic(splitt[0]) {
 		return "C_ARITHMETIC"
+	} else if splitt[0] == "push" {
+		return "C_PUSH"
 	} else {
 		return " "
 	}
 }
-func wordInArithmetic(a string) bool {
+func WordInArithmetic(a string) bool {
 	var l []string
 	l = append(l, "add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not")
 
@@ -55,17 +58,19 @@ func wordInArithmetic(a string) bool {
 	return false
 }
 
-func arg1(p parser) string {
-	if commandType(p) == "C_ARITHMETIC" {
-		var splitt []string = strings.Split(p.current, " ")
+func Arg1(p parser) string {
+	var splitt []string = strings.Split(p.Current, " ")
+	if CommandType(p) == "C_ARITHMETIC" {
 		return splitt[0]
 	} else {
-		return ""
+		return splitt[1]
 	}
 
 }
 
-func arg2(p parser) int {
-	return 0
-
+func Arg2(p parser) int {
+	var splitt []string = strings.Split(p.Current, " ")
+	intVar, err := strconv.Atoi(splitt[2])
+	Check(err)
+	return intVar
 }
