@@ -14,8 +14,8 @@ func main() {
 	code := CodeWriter.New(path)
 	scanner := bufio.NewScanner(pars.File)
 	for true {
-		if parser.HasMoreCommands(pars, scanner) {
-			parser.Advance(scanner, pars)
+		if parser.HasMoreCommands(&pars, scanner) {
+			parser.Advance(scanner, &pars)
 			if parser.CommandType(pars) == "C_ARITHMETIC" {
 				CodeWriter.WriteArithmetic(pars.Current, code)
 			} else if parser.CommandType(pars) == "C_PUSH" {

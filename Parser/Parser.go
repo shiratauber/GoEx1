@@ -27,11 +27,11 @@ func New(path string) parser {
 	return input
 }
 
-func HasMoreCommands(p parser, s *bufio.Scanner) bool {
+func HasMoreCommands(p *parser, s *bufio.Scanner) bool {
 	return s.Scan()
 }
 
-func Advance(s *bufio.Scanner, p parser) {
+func Advance(s *bufio.Scanner, p *parser) {
 	p.Current = s.Text()
 }
 

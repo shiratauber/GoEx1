@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -111,7 +112,7 @@ func WritePushPop(command string, segment string, index int, c CodeWriter) {
 }
 
 func PushConstant(index int, c CodeWriter) {
-	var s string = "@" + string(index) + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" + "M=D" + "\n" + "\n"
+	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" + "M=D" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
