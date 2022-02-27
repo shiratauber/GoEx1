@@ -38,28 +38,28 @@ func Check(err error) {
 	}
 }
 
-func WriteArithmetic(command string, c CodeWriter) {
+func WriteArithmetic(command string, c CodeWriter, lineNumber string) {
 	var splitt []string = strings.Split(command, " ")
 	var action string = splitt[0]
 	switch action {
 	case "add":
 		AddTranslate(c)
 	case "sub":
-		fmt.Println("Tuesday")
+		SubTranslate(c)
 	case "neg":
-		fmt.Println("Wednesday")
+		NegTranslate(c)
 	case "lt":
-		fmt.Println("Thursday")
+		LtTranslate(c, lineNumber)
 	case "gt":
-		fmt.Println("Friday")
+		GtTranslate(c, lineNumber)
 	case "eq":
-		fmt.Println("Saturday")
+		EqTranslate(c, lineNumber)
 	case "and":
-		fmt.Println("Sunday")
+		AndTranslate(c)
 	case "or":
-		fmt.Println("Sunday")
+		OrTranslate(c)
 	case "not":
-		fmt.Println("Sunday")
+		NotTranslate(c)
 	default:
 		fmt.Println("Invalid")
 	}
@@ -72,28 +72,73 @@ func AddTranslate(c CodeWriter) {
 	}
 
 }
-func SubTranslate() {
+func SubTranslate(c CodeWriter) {
+	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "M=M-D" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 
 }
-func EqTranslate() {
+func EqTranslate(c CodeWriter, lineNumber string) {
+	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "A=M" + "\n" + "D=A-D" + "\n" +
+		"@TRUE" + lineNumber + "\n" + "D;JEQ" + "\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=0" + "\n" +
+		"@FALSE" + lineNumber + "\n" + "0;JEQ" + "\n" +
+		"(TRUE" + lineNumber + ")" + "\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=-1" + "\n" +
+		"(FALSE" + lineNumber + ")" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 
 }
-func NegTranslate() {
+func NegTranslate(c CodeWriter) {
+	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "M=-M" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 
 }
-func LtTranslate() {
+func LtTranslate(c CodeWriter, lineNumber string) {
+
+	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" +
+		"A=M" + "\n" + "D=A-D" + "\n" + "@TRUE" + lineNumber + "\n" + "D;JLT" +
+		"\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=0" + "\n" + "@FALSE" + lineNumber +
+		"\n" + "0;JEQ" + "(TRUE" + lineNumber + ")" + "\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=-1" +
+		"(FALSE" + lineNumber + ")" + "\n" + "\n"
+
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 
 }
-func GtTranslate() {
+func GtTranslate(c CodeWriter, lineNumber string) {
+	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "A=M" + "\n" + "D=A-D" + "\n" +
+		"@TRUE" + lineNumber + "\n" + "D;JGT" + "\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=0" + "\n" +
+		"@FALSE" + lineNumber + "\n" + "0;JEQ" + "\n" +
+		"(TRUE" + lineNumber + ")" + "\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=-1" + "\n" +
+		"(FALSE" + lineNumber + ")" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 
 }
-func AndTranslate() {
+func AndTranslate(c CodeWriter) {
+	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "M=M&D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
+}
+func NotTranslate(c CodeWriter) {
+	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "M=!M" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 
 }
-func NotTranslate() {
-
-}
-func OrTranslate() {
+func OrTranslate(c CodeWriter) {
+	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "M=M&D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 
 }
 func Close(c CodeWriter) {

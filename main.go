@@ -5,6 +5,7 @@ import (
 	"GoEx1/Parser"
 	"bufio"
 	"fmt"
+	"strconv"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 		if parser.HasMoreCommands(&pars, scanner) {
 			parser.Advance(scanner, &pars)
 			if parser.CommandType(pars) == "C_ARITHMETIC" {
-				CodeWriter.WriteArithmetic(pars.Current, code)
+				CodeWriter.WriteArithmetic(pars.Current, code, strconv.Itoa(pars.LineNumber))
 			} else if parser.CommandType(pars) == "C_PUSH" {
 				CodeWriter.WritePushPop(parser.CommandType(pars), parser.Arg1(pars), parser.Arg2(pars), code)
 			}

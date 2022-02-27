@@ -9,9 +9,10 @@ import (
 )
 
 type parser struct {
-	inputFile string
-	File      *os.File
-	Current   string
+	inputFile  string
+	File       *os.File
+	Current    string
+	LineNumber int
 }
 
 func Check(err error) {
@@ -22,8 +23,10 @@ func Check(err error) {
 
 func New(path string) parser {
 	f, err := os.Open(path)
+
 	Check(err)
-	input := parser{path, f, " "}
+	input := parser{path, f, " ", 0}
+
 	return input
 }
 
@@ -33,6 +36,7 @@ func HasMoreCommands(p *parser, s *bufio.Scanner) bool {
 
 func Advance(s *bufio.Scanner, p *parser) {
 	p.Current = s.Text()
+	p.LineNumber += 1
 }
 
 func CommandType(p parser) string {
