@@ -1,4 +1,4 @@
-package Parser
+package parser
 
 import (
 	"bufio"
@@ -26,7 +26,7 @@ func New(path string) parser {
 	return input
 }
 
-func hasMoreCommands(s *bufio.Scanner) bool {
+func hasMoreCommands(p parser, s *bufio.Scanner) bool {
 	return s.Scan()
 }
 
