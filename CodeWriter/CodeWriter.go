@@ -111,7 +111,8 @@ func LtTranslate(c CodeWriter, lineNumber string) {
 
 }
 func GtTranslate(c CodeWriter, lineNumber string) {
-	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "A=M" + "\n" + "D=A-D" + "\n" +
+	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "A=M" + "\n" +
+		"D=A-D" + "\n" +
 		"@TRUE" + lineNumber + "\n" + "D;JGT" + "\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=0" + "\n" +
 		"@FALSE" + lineNumber + "\n" + "0;JEQ" + "\n" +
 		"(TRUE" + lineNumber + ")" + "\n" + "@SP" + "\n" + "A=M-1" + "\n" + "M=-1" + "\n" +
@@ -122,7 +123,8 @@ func GtTranslate(c CodeWriter, lineNumber string) {
 
 }
 func AndTranslate(c CodeWriter) {
-	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "M=M&D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "M=M&D" +
+		"\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
@@ -135,7 +137,8 @@ func NotTranslate(c CodeWriter) {
 
 }
 func OrTranslate(c CodeWriter) {
-	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" + "M=M&D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" +
+		"M=M&D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
@@ -191,47 +194,54 @@ func WritePushPop(command string, segment string, index int, c CodeWriter) {
 }
 
 func PushConstant(index int, c CodeWriter) {
-	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" + "M=D" + "\n" + "\n"
+	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" +
+		"\n" + "M=D" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 }
 func PushLocal(index int, c CodeWriter) {
 
-	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@LCL" + "\n" + "A=M+D" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
+	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@LCL" + "\n" + "A=M+D" + "\n" + "D=M" + "\n" +
+		"@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 }
 func PushArgument(index int, c CodeWriter) {
-	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@ARG" + "\n" + "A=M+D" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
+	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@ARG" + "\n" + "A=M+D" + "\n" + "D=M" +
+		"\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 }
 func PushThis(index int, c CodeWriter) {
 
-	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@THIS" + "\n" + "A=M+D" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
+	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@THIS" + "\n" + "A=M+D" + "\n" + "D=M" +
+		"\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 }
 func PushThat(index int, c CodeWriter) {
 
-	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@THAT" + "\n" + "A=M+D" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
+	var s string = "@" + strconv.Itoa(index) + "\n" + "D=A" + "\n" + "@THAT" + "\n" + "A=M+D" + "\n" + "D=M" + "\n" +
+		"@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 }
 func PushTemp(index int, c CodeWriter) {
 	////////////////////////////
-	var s string = "@" + strconv.Itoa(index+5) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" + "M=D" + "\n" + "\n"
+	var s string = "@" + strconv.Itoa(index+5) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" +
+		"\n" + "M=D" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 }
 func PushStatic(index int, c CodeWriter) {
-	var s string = "@" + c.file.Name() + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
+	var s string = "@" + c.file.Name() + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" +
+		"\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
@@ -239,14 +249,16 @@ func PushStatic(index int, c CodeWriter) {
 
 func PushPointer(index int, c CodeWriter) {
 	if index == 0 {
-		var s string = "@THIS" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" + "M=D" + "\n" + "\n"
+		var s string = "@THIS" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" + "M=D" +
+			"\n" + "\n"
 		if _, err := c.file.WriteString(s); err != nil {
 			panic(err)
 		}
 	}
 	if index == 1 {
 
-		var s string = "@THAT" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" + "M=D" + "\n" + "\n"
+		var s string = "@THAT" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "A=M-1" + "\n" +
+			"M=D" + "\n" + "\n"
 		if _, err := c.file.WriteString(s); err != nil {
 			panic(err)
 		}
