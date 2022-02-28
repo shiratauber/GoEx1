@@ -19,7 +19,7 @@ func main() {
 			parser.Advance(scanner, &pars)
 			if parser.CommandType(pars) == "C_ARITHMETIC" {
 				CodeWriter.WriteArithmetic(pars.Current, code, strconv.Itoa(pars.LineNumber))
-			} else if parser.CommandType(pars) == "C_PUSH" {
+			} else if parser.CommandType(pars) == "C_PUSH" || parser.CommandType(pars) == "C_POP" {
 				CodeWriter.WritePushPop(parser.CommandType(pars), parser.Arg1(pars), parser.Arg2(pars), code)
 			}
 		} else {

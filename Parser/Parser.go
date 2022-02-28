@@ -46,9 +46,12 @@ func CommandType(p parser) string {
 		return "C_ARITHMETIC"
 	} else if splitt[0] == "push" {
 		return "C_PUSH"
+	} else if splitt[0] == "pop" {
+		return "C_POP"
 	} else {
 		return " "
 	}
+
 }
 func WordInArithmetic(a string) bool {
 	var l []string
