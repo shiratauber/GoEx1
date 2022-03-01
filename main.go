@@ -1,5 +1,12 @@
 package main
 
+/*
+Shira Tauber 213936271
+Shvut Lazare 213195977
+exercise 1
+group 43
+*/
+
 import (
 	"GoEx1/CodeWriter"
 	"GoEx1/Parser"

@@ -90,6 +90,7 @@ func EqTranslate(c CodeWriter, lineNumber string) {
 	}
 
 }
+
 func NegTranslate(c CodeWriter) {
 	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "M=-M" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
@@ -138,7 +139,7 @@ func NotTranslate(c CodeWriter) {
 }
 func OrTranslate(c CodeWriter) {
 	var s string = "@SP" + "\n" + "A=M" + "\n" + "A=A-1" + "\n" + "D=M" + "\n" + "A=A-1" + "\n" +
-		"M=M&D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+		"M=M|D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
