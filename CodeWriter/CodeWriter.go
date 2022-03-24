@@ -9,9 +9,10 @@ import (
 )
 
 type CodeWriter struct {
-	outputFile string
-	file       *os.File
-	current    string
+	outputFile  string
+	file        *os.File
+	current     string
+	callCounter int
 }
 
 func New(path string) CodeWriter {
@@ -25,7 +26,7 @@ func New(path string) CodeWriter {
 	//open the output file
 	myFile, err := os.OpenFile(oFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
 	Check(err)
-	output := CodeWriter{path, myFile, " "}
+	output := CodeWriter{path, myFile, " ", 0}
 	return output
 }
 func SetFileName(c CodeWriter, s string) {
@@ -352,7 +353,8 @@ func WriteGoTo(arg1 string, c CodeWriter) {
 }
 
 func WriteIf(arg1 string, c CodeWriter) {
-	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@" + c.file.Name() + "." + arg1 + "\n" + "D;JNE" + "\n" + "\n"
+	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@" + c.file.Name() + "." + arg1 +
+		"\n" + "D;JNE" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
@@ -362,11 +364,40 @@ func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
 	//label f
 	WriteLabel(arg1, c)
 	//initialize local variables
-	var s string = "@" + arg2 + "\n" + "D=A" + "\n" + "@" + arg1 + ".END" + "\n" + "D;JEQ" + "\n" + "\n"
+	var s string = "@" + arg2 + "\n" + "D=A" + "\n" + "@" + arg1 + ".END" + "\n" + "D;JEQ" + "\n"
 	//jump if false
-	s += "(" + arg1 + ".LOOP)" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=0" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "@" + arg1 + ".LOOP" + "\n" + "\n"
+	s += "(" + arg1 + ".LOOP)" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=0" + "\n" + "@SP" + "\n" + "M=M+1" +
+		"\n" + "@" + arg1 + ".LOOP" + "\n"
 	///////////////////////////////////////////////////////////////////////////////////////////
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
+}
+
+func WriteCall(arg1 string, arg2 string, c CodeWriter) {
+	// push return-address
+	var s string = "@" + arg1 + ".RETURN_ADDRESS" + strconv.Itoa(c.callCounter) + "\n" + "D=A" + "\n" + "@SP" + "\n" +
+		"A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
+	// push LCL
+	s += "@LCL" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
+	// push ARG
+	s += "@ARG" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
+	// push THIS
+	s += "@THIS" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
+	// push THAT
+	s += "@THAT" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
+	// ARG = SP-n-5
+	y, e := strconv.Atoi(arg2)
+	Check(e)
+	s += "@SP" + "\n" + "D=M" + "\n" + "@" + strconv.Itoa(y+5) + "\n" + "D=D-A" + "\n" + "@ARG" + "\n" + "M=D" + "\n"
+	// LCL = SP
+	s += "@SP" + "\n" + "D=M" + "\n" + "@LCL" + "\n" + "M=D" + "\n"
+	// goto f
+	s += "@" + arg1 + "\n" + "0;JMP" + "\n"
+	// label return-address
+	s += "(" + arg1 + ".RETURN_ADDRESS" + strconv.Itoa(c.callCounter) + ")" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
+	c.callCounter++
 }
