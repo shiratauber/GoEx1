@@ -316,7 +316,8 @@ func PopTemp(index int, c CodeWriter) {
 
 func PopStatic(index int, c CodeWriter) {
 	var s string = "@SP" + "\n" + "A=M-1" + "\n" + "D=M" + "\n" + "@" +
-		c.file.Name() + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+		c.file.Name() + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" +
+		"\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
@@ -333,5 +334,39 @@ func PopPointer(index int, c CodeWriter) {
 		if _, err := c.file.WriteString(s); err != nil {
 			panic(err)
 		}
+	}
+}
+
+func WriteLabel(arg1 string, c CodeWriter) {
+	var s string = "(" + c.file.Name() + "." + arg1 + ")" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
+}
+
+func WriteGoTo(arg1 string, c CodeWriter) {
+	var s string = "@" + c.file.Name() + "." + arg1 + "\n" + "0;JMP" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
+}
+
+func WriteIf(arg1 string, c CodeWriter) {
+	var s string = "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@" + c.file.Name() + "." + arg1 + "\n" + "D;JNE" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
+}
+
+func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
+	//label f
+	WriteLabel(arg1, c)
+	//initialize local variables
+	var s string = "@" + arg2 + "\n" + "D=A" + "\n" + "@" + arg1 + ".END" + "\n" + "D;JEQ" + "\n" + "\n"
+	//jump if false
+	s += "(" + arg1 + ".LOOP)" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=0" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "@" + arg1 + ".LOOP" + "\n" + "\n"
+	///////////////////////////////////////////////////////////////////////////////////////////
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
 	}
 }
