@@ -12,15 +12,14 @@ type CodeWriter struct {
 	outputFile  string
 	file        *os.File
 	current     string
-	callCounter int
+	CallCounter int
 }
 
 func New(path string) CodeWriter {
-	var split1 []string = strings.Split(path, ".")
-	var withoutLast []string = split1[:len(split1)-1]
-	//var withLast string = strings.Join(withoutLast," ")
-	var split2 []string = strings.Split(withoutLast[0], "\\")
-	var last string = split2[len(split2)-1]
+	var splitt []string = strings.Split(path, "\\")
+	var last string = splitt[len(splitt)-1] //the name of the output file
+
+	//create the output file
 	oFile, err := os.Create(last + ".asm")
 	Check(err)
 	//open the output file
@@ -341,14 +340,13 @@ func PopPointer(index int, c CodeWriter) {
 //EX2
 //////////////////////////////////////////////////////////
 func WriteInit(haveSysInit bool, c CodeWriter) {
-	var s string = "@256" + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=D"
-
-	if haveSysInit == true {
-		c.callCounter = 0
-		WriteCall("Sys.init", "0", c)
-	}
+	var s string = "@256" + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=D" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
+	}
+	if haveSysInit == true {
+		c.CallCounter = 0
+		WriteCall("Sys.init", "0", c)
 	}
 }
 func WriteLabel(arg1 string, c CodeWriter) {
@@ -375,9 +373,10 @@ func WriteIf(arg1 string, c CodeWriter) {
 
 func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
 	//label f
-	WriteLabel(arg1, c)
+	var s string = "(" + arg1 + ")" + "\n"
+	//WriteLabel(arg1, c)
 	//initialize local variables
-	var s string = "@" + arg2 + "\n" + "D=A" + "\n" + "@" + arg1 + ".END" + "\n" + "D;JEQ" + "\n"
+	s += "@" + arg2 + "\n" + "D=A" + "\n" + "@" + arg1 + ".END" + "\n" + "D;JEQ" + "\n"
 	//jump if false- k!=0
 	s += "(" + arg1 + ".LOOP)" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=0" + "\n" + "@SP" + "\n" + "M=M+1" +
 		"\n" + "@" + arg1 + ".LOOP" + "\n"
@@ -392,7 +391,7 @@ func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
 
 func WriteCall(arg1 string, arg2 string, c CodeWriter) {
 	// push return-address
-	var s string = "@" + arg1 + ".RETURN_ADDRESS" + strconv.Itoa(c.callCounter) + "\n" + "D=A" + "\n" + "@SP" + "\n" +
+	var s string = "@" + arg1 + ".RETURN_ADDRESS" + strconv.Itoa(c.CallCounter) + "\n" + "D=A" + "\n" + "@SP" + "\n" +
 		"A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
 	// push LCL
 	s += "@LCL" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
@@ -411,11 +410,11 @@ func WriteCall(arg1 string, arg2 string, c CodeWriter) {
 	// goto f
 	s += "@" + arg1 + "\n" + "0;JMP" + "\n"
 	// label return-address
-	s += "(" + arg1 + ".RETURN_ADDRESS" + strconv.Itoa(c.callCounter) + ")" + "\n" + "\n"
+	s += "(" + arg1 + ".RETURN_ADDRESS" + strconv.Itoa(c.CallCounter) + ")" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
-	c.callCounter++
+	//c.callCounter++
 }
 func WriteReturn(c CodeWriter) {
 	// FRAME = LCL
@@ -441,3 +440,19 @@ func WriteReturn(c CodeWriter) {
 		panic(err)
 	}
 }
+
+/*
+func New(path string) CodeWriter {
+	var split1 []string = strings.Split(path, ".")
+	var withoutLast []string = split1[:len(split1)-1]
+	//var withLast string = strings.Join(withoutLast," ")
+	var split2 []string = strings.Split(withoutLast[0], "\\")
+	var last string = split2[len(split2)-1]
+	oFile, err := os.Create(last + ".asm")
+	Check(err)
+	//open the output file
+	myFile, err := os.OpenFile(oFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
+	Check(err)
+	output := CodeWriter{path, myFile, " ", 0}
+	return output
+}*/

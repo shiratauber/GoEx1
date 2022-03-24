@@ -30,6 +30,10 @@ func New(path string) Parser {
 	return input
 }
 
+func Close(p Parser) {
+	p.File.Close()
+}
+
 func HasMoreCommands(p *Parser, s *bufio.Scanner) bool {
 	return s.Scan()
 }
@@ -90,7 +94,7 @@ func Arg1(p Parser) string {
 }
 
 func Arg2(p Parser) int {
-	var splitt []string = strings.Split(p.Current, " ")
+	var splitt []string = strings.Fields(p.Current)
 	intVar, err := strconv.Atoi(splitt[2])
 	Check(err)
 	return intVar
