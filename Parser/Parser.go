@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type parser struct {
+type Parser struct {
 	inputFile  string
 	File       *os.File
 	Current    string
@@ -21,25 +21,25 @@ func Check(err error) {
 	}
 }
 
-func New(path string) parser {
+func New(path string) Parser {
 	f, err := os.Open(path)
 
 	Check(err)
-	input := parser{path, f, " ", 0}
+	input := Parser{path, f, " ", 0}
 
 	return input
 }
 
-func HasMoreCommands(p *parser, s *bufio.Scanner) bool {
+func HasMoreCommands(p *Parser, s *bufio.Scanner) bool {
 	return s.Scan()
 }
 
-func Advance(s *bufio.Scanner, p *parser) {
+func Advance(s *bufio.Scanner, p *Parser) {
 	p.Current = s.Text()
 	p.LineNumber += 1
 }
 
-func CommandType(p parser) string {
+func CommandType(p Parser) string {
 	var splitt []string = strings.Split(p.Current, " ")
 
 	if WordInArithmetic(splitt[0]) {
@@ -79,7 +79,7 @@ func WordInArithmetic(a string) bool {
 	return false
 }
 
-func Arg1(p parser) string {
+func Arg1(p Parser) string {
 	var splitt []string = strings.Split(p.Current, " ")
 	if CommandType(p) == "C_ARITHMETIC" {
 		return splitt[0]
@@ -89,7 +89,7 @@ func Arg1(p parser) string {
 
 }
 
-func Arg2(p parser) int {
+func Arg2(p Parser) int {
 	var splitt []string = strings.Split(p.Current, " ")
 	intVar, err := strconv.Atoi(splitt[2])
 	Check(err)
