@@ -338,6 +338,19 @@ func PopPointer(index int, c CodeWriter) {
 	}
 }
 
+//EX2
+//////////////////////////////////////////////////////////
+func WriteInit(haveSysInit bool, c CodeWriter) {
+	var s string = "@256" + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=D"
+
+	if haveSysInit == true {
+		c.callCounter = 0
+		WriteCall("Sys.init", "0", c)
+	}
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
+}
 func WriteLabel(arg1 string, c CodeWriter) {
 	var s string = "(" + c.file.Name() + "." + arg1 + ")" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
@@ -365,10 +378,13 @@ func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
 	WriteLabel(arg1, c)
 	//initialize local variables
 	var s string = "@" + arg2 + "\n" + "D=A" + "\n" + "@" + arg1 + ".END" + "\n" + "D;JEQ" + "\n"
-	//jump if false
+	//jump if false- k!=0
 	s += "(" + arg1 + ".LOOP)" + "\n" + "@SP" + "\n" + "A=M" + "\n" + "M=0" + "\n" + "@SP" + "\n" + "M=M+1" +
 		"\n" + "@" + arg1 + ".LOOP" + "\n"
-	///////////////////////////////////////////////////////////////////////////////////////////
+	//jump while k!=0
+	s += "D=D-1;JNE" + "\n"
+	//jump if true k==0
+	s += "(" + arg1 + ".END)" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
@@ -400,4 +416,28 @@ func WriteCall(arg1 string, arg2 string, c CodeWriter) {
 		panic(err)
 	}
 	c.callCounter++
+}
+func WriteReturn(c CodeWriter) {
+	// FRAME = LCL
+	var s string = "@LCL" + "\n" + "D=M" + "\n"
+	// RET = *(FRAME - 5)
+	// RAM[13] = (LOCAL - 5)
+	s += "@5" + "\n" + "A=D-A" + "\n" + "D=M" + "\n" + "@13" + "\n" + "M=D" + "\n"
+	// *ARG = pop()
+	s += "@SP" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@ARG" + "\n" + "A=M" + "\n" + "M=D" + "\n"
+	// SP = ARG + 1
+	s += "@ARG" + "\n" + "D=M" + "\n" + "@SP" + "\n" + "M=D+1" + "\n"
+	// THAT = *(FRAME - 1)
+	s += "@LCL" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@THAT" + "\n" + "M=D" + "\n"
+	// THIS = *(FRAME - 2)
+	s += "@LCL" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@THIS" + "\n" + "M=D" + "\n"
+	// ARG = *(FRAME - 3)
+	s += "@LCL" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@ARG" + "\n" + "M=D" + "\n"
+	// LCL = *(FRAME - 4)
+	s += "@LCL" + "\n" + "M=M-1" + "\n" + "A=M" + "\n" + "D=M" + "\n" + "@LCL" + "\n" + "M=D" + "\n"
+	// goto RET
+	s += "@13" + "\n" + "A=M" + "\n" + "0;JMP" + "\n" + "\n"
+	if _, err := c.file.WriteString(s); err != nil {
+		panic(err)
+	}
 }
