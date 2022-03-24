@@ -44,10 +44,24 @@ func CommandType(p parser) string {
 
 	if WordInArithmetic(splitt[0]) {
 		return "C_ARITHMETIC"
-	} else if splitt[0] == "push" {
+	}
+
+	if splitt[0] == "push" {
 		return "C_PUSH"
 	} else if splitt[0] == "pop" {
 		return "C_POP"
+	} else if splitt[0] == "label" {
+		return "C_LABEL"
+	} else if splitt[0] == "goto" {
+		return "C_GOTO"
+	} else if splitt[0] == "if-goto" {
+		return "C_IF"
+	} else if splitt[0] == "return" {
+		return "C_RETURN"
+	} else if splitt[0] == "function" {
+		return "C_FUNCTION"
+	} else if splitt[0] == "call" {
+		return "C_CALL"
 	} else {
 		return " "
 	}

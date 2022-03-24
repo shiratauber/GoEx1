@@ -28,7 +28,20 @@ func main() {
 				CodeWriter.WriteArithmetic(pars.Current, code, strconv.Itoa(pars.LineNumber))
 			} else if parser.CommandType(pars) == "C_PUSH" || parser.CommandType(pars) == "C_POP" {
 				CodeWriter.WritePushPop(parser.CommandType(pars), parser.Arg1(pars), parser.Arg2(pars), code)
+			} else if parser.CommandType(pars) == "C_LABEL" {
+				CodeWriter.WriteLabel(parser.Arg1(pars), code)
+			} else if parser.CommandType(pars) == "C_GOTO" {
+				CodeWriter.WriteGoTo(parser.Arg1(pars), code)
+			} else if parser.CommandType(pars) == "C_IF" {
+				CodeWriter.WriteIf(parser.Arg1(pars), code)
+			} else if parser.CommandType(pars) == "C_RETURN" {
+				CodeWriter.WriteReturn(code)
+			} else if parser.CommandType(pars) == "C_FUNCTION" {
+				CodeWriter.WriteFunction(parser.Arg1(pars), strconv.Itoa(parser.Arg2(pars)), code)
+			} else if parser.CommandType(pars) == "C_CALL" {
+				CodeWriter.WriteCall(parser.Arg1(pars), strconv.Itoa(parser.Arg2(pars)), code)
 			}
+
 		} else {
 			break
 		}
