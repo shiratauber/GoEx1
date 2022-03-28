@@ -67,7 +67,7 @@ func WriteByCommand(pars parser.Parser, code *CodeWriter.CodeWriter) {
 	if parser.CommandType(pars) == "C_ARITHMETIC" {
 		CodeWriter.WriteArithmetic(pars.Current, *code, strconv.Itoa(pars.LineNumber))
 	} else if parser.CommandType(pars) == "C_PUSH" || parser.CommandType(pars) == "C_POP" {
-		CodeWriter.WritePushPop(parser.CommandType(pars), parser.Arg1(pars), parser.Arg2(pars), *code)
+		CodeWriter.WritePushPop(parser.CommandType(pars), parser.Arg1(pars), parser.Arg2(pars), *code, pars)
 	} else if parser.CommandType(pars) == "C_LABEL" {
 		CodeWriter.WriteLabel(parser.Arg1(pars), *code)
 	} else if parser.CommandType(pars) == "C_GOTO" {

@@ -9,6 +9,7 @@ import (
 )
 
 type Parser struct {
+	FileName   string
 	inputFile  string
 	File       *os.File
 	Current    string
@@ -23,9 +24,10 @@ func Check(err error) {
 
 func New(path string) Parser {
 	f, err := os.Open(path)
-
+	var splitt []string = strings.Split(path, "\\")
+	var last string = splitt[len(splitt)-1] //the name of the output file
 	Check(err)
-	input := Parser{path, f, " ", 0}
+	input := Parser{last, path, f, " ", 0}
 
 	return input
 }

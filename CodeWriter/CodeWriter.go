@@ -1,6 +1,7 @@
 package CodeWriter
 
 import (
+	parser "GoEx1/Parser"
 	"fmt"
 	"log"
 	"os"
@@ -148,7 +149,7 @@ func OrTranslate(c CodeWriter) {
 func Close(c CodeWriter) {
 	c.file.Close()
 }
-func WritePushPop(command string, segment string, index int, c CodeWriter) {
+func WritePushPop(command string, segment string, index int, c CodeWriter, p parser.Parser) {
 
 	if command == "C_PUSH" {
 		switch segment {
@@ -163,7 +164,7 @@ func WritePushPop(command string, segment string, index int, c CodeWriter) {
 		case "that":
 			PushThat(index, c)
 		case "static":
-			PushStatic(index, c)
+			PushStatic(index, c, p)
 		case "pointer":
 			PushPointer(index, c)
 		case "argument":
@@ -184,7 +185,7 @@ func WritePushPop(command string, segment string, index int, c CodeWriter) {
 		case "that":
 			PopThat(index, c)
 		case "static":
-			PopStatic(index, c)
+			PopStatic(index, c, p)
 		case "pointer":
 			PopPointer(index, c)
 		case "argument":
@@ -240,8 +241,8 @@ func PushTemp(index int, c CodeWriter) {
 		panic(err)
 	}
 }
-func PushStatic(index int, c CodeWriter) {
-	var s string = "@" + c.file.Name() + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" +
+func PushStatic(index int, c CodeWriter, p parser.Parser) {
+	var s string = "@" + p.FileName + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" +
 		"\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
@@ -307,16 +308,18 @@ func PopThat(index int, c CodeWriter) {
 }
 
 func PopTemp(index int, c CodeWriter) {
-	var s string = "@SP" + "\n" + "A=M-1" + "\n" + "D=M" + "\n" + "@" +
-		strconv.Itoa(index+5) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+	//var s string = "@SP" + "\n" + "A=M-1" + "\n" + "D=M" + "\n" + "@" +
+	//strconv.Itoa(index+5) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" + "\n"
+	var s string = "@5" + "\n" + "D=A" + "\n" + "@" + strconv.Itoa(index) + "\n" + "D=D+A" + "\n" + "@13" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" + "\n" +
+		"A=M" + "\n" + "D=M" + "\n" + "@13" + "\n" + "A=M" + "\n" + "M=D" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 }
 
-func PopStatic(index int, c CodeWriter) {
+func PopStatic(index int, c CodeWriter, p parser.Parser) {
 	var s string = "@SP" + "\n" + "A=M-1" + "\n" + "D=M" + "\n" + "@" +
-		c.file.Name() + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" +
+		p.FileName + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" +
 		"\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
