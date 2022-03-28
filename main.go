@@ -37,9 +37,10 @@ func main() {
 	}
 
 	if numVm > 1 {
-		CodeWriter.WriteInit(true, code)
+		CodeWriter.WriteInit(true, &code)
+		code.CallCounter++
 	} else {
-		CodeWriter.WriteInit(false, code)
+		CodeWriter.WriteInit(false, &code)
 	}
 
 	for _, f := range files {

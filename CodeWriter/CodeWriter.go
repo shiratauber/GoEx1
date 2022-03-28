@@ -339,14 +339,14 @@ func PopPointer(index int, c CodeWriter) {
 
 //EX2
 //////////////////////////////////////////////////////////
-func WriteInit(haveSysInit bool, c CodeWriter) {
+func WriteInit(haveSysInit bool, c *CodeWriter) {
 	var s string = "@256" + "\n" + "D=A" + "\n" + "@SP" + "\n" + "M=D" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
 	}
 	if haveSysInit == true {
 		c.CallCounter = 0
-		WriteCall("Sys.init", "0", c)
+		WriteCall("Sys.init", "0", *c)
 	}
 }
 func WriteLabel(arg1 string, c CodeWriter) {
