@@ -149,7 +149,7 @@ func OrTranslate(c CodeWriter) {
 func Close(c CodeWriter) {
 	c.file.Close()
 }
-func WritePushPop(command string, segment string, index int, c CodeWriter) {
+func WritePushPop(command string, segment string, index int, c CodeWriter, staticScope string) {
 
 	if command == "C_PUSH" {
 		switch segment {
@@ -164,7 +164,7 @@ func WritePushPop(command string, segment string, index int, c CodeWriter) {
 		case "that":
 			PushThat(index, c)
 		case "static":
-			PushStatic(index, c)
+			PushStatic(index, c, staticScope)
 		case "pointer":
 			PushPointer(index, c)
 		case "argument":
@@ -185,7 +185,7 @@ func WritePushPop(command string, segment string, index int, c CodeWriter) {
 		case "that":
 			PopThat(index, c)
 		case "static":
-			PopStatic(index, c)
+			PopStatic(index, c, staticScope)
 		case "pointer":
 			PopPointer(index, c)
 		case "argument":
@@ -241,8 +241,8 @@ func PushTemp(index int, c CodeWriter) {
 		panic(err)
 	}
 }
-func PushStatic(index int, c CodeWriter) {
-	var s string = "@" + c.funcName + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" +
+func PushStatic(index int, c CodeWriter, staticScope string) {
+	var s string = "@" + staticScope + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" +
 		"\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
@@ -317,9 +317,9 @@ func PopTemp(index int, c CodeWriter) {
 	}
 }
 
-func PopStatic(index int, c CodeWriter) {
+func PopStatic(index int, c CodeWriter, staticScope string) {
 	var s string = "@SP" + "\n" + "A=M-1" + "\n" + "D=M" + "\n" + "@" +
-		c.funcName + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" +
+		staticScope + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" +
 		"\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
@@ -374,7 +374,7 @@ func WriteIf(arg1 string, c CodeWriter) {
 	}
 }
 
-func WriteFunction(arg1 string, arg2 string, c *CodeWriter) {
+func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
 	c.funcName = arg1
 	//label f
 	var s string = "(" + arg1 + ")" + "\n"
