@@ -1,7 +1,6 @@
 package CodeWriter
 
 import (
-	parser "GoEx1/Parser"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +13,7 @@ type CodeWriter struct {
 	file        *os.File
 	current     string
 	CallCounter int
+	funcName    string
 }
 
 func New(path string) CodeWriter {
@@ -26,7 +26,7 @@ func New(path string) CodeWriter {
 	//open the output file
 	myFile, err := os.OpenFile(oFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
 	Check(err)
-	output := CodeWriter{path, myFile, " ", 0}
+	output := CodeWriter{path, myFile, " ", 0, last}
 	return output
 }
 func SetFileName(c CodeWriter, s string) {
@@ -149,7 +149,7 @@ func OrTranslate(c CodeWriter) {
 func Close(c CodeWriter) {
 	c.file.Close()
 }
-func WritePushPop(command string, segment string, index int, c CodeWriter, p parser.Parser) {
+func WritePushPop(command string, segment string, index int, c CodeWriter) {
 
 	if command == "C_PUSH" {
 		switch segment {
@@ -164,7 +164,7 @@ func WritePushPop(command string, segment string, index int, c CodeWriter, p par
 		case "that":
 			PushThat(index, c)
 		case "static":
-			PushStatic(index, c, p)
+			PushStatic(index, c)
 		case "pointer":
 			PushPointer(index, c)
 		case "argument":
@@ -185,7 +185,7 @@ func WritePushPop(command string, segment string, index int, c CodeWriter, p par
 		case "that":
 			PopThat(index, c)
 		case "static":
-			PopStatic(index, c, p)
+			PopStatic(index, c)
 		case "pointer":
 			PopPointer(index, c)
 		case "argument":
@@ -241,8 +241,8 @@ func PushTemp(index int, c CodeWriter) {
 		panic(err)
 	}
 }
-func PushStatic(index int, c CodeWriter, p parser.Parser) {
-	var s string = "@" + p.FileName + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" +
+func PushStatic(index int, c CodeWriter) {
+	var s string = "@" + c.funcName + "." + strconv.Itoa(index) + "\n" + "D=M" + "\n" + "@SP" + "\n" + "A=M" +
 		"\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
@@ -317,9 +317,9 @@ func PopTemp(index int, c CodeWriter) {
 	}
 }
 
-func PopStatic(index int, c CodeWriter, p parser.Parser) {
+func PopStatic(index int, c CodeWriter) {
 	var s string = "@SP" + "\n" + "A=M-1" + "\n" + "D=M" + "\n" + "@" +
-		p.FileName + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" +
+		c.funcName + "." + strconv.Itoa(index) + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M-1" +
 		"\n" + "\n"
 	if _, err := c.file.WriteString(s); err != nil {
 		panic(err)
@@ -374,7 +374,8 @@ func WriteIf(arg1 string, c CodeWriter) {
 	}
 }
 
-func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
+func WriteFunction(arg1 string, arg2 string, c *CodeWriter) {
+	c.funcName = arg1
 	//label f
 	var s string = "(" + arg1 + ")" + "\n"
 	//WriteLabel(arg1, c)
@@ -393,6 +394,7 @@ func WriteFunction(arg1 string, arg2 string, c CodeWriter) {
 }
 
 func WriteCall(arg1 string, arg2 string, c CodeWriter) {
+
 	// push return-address
 	var s string = "@" + arg1 + ".RETURN_ADDRESS" + strconv.Itoa(c.CallCounter) + "\n" + "D=A" + "\n" + "@SP" + "\n" +
 		"A=M" + "\n" + "M=D" + "\n" + "@SP" + "\n" + "M=M+1" + "\n"
