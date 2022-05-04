@@ -12,6 +12,7 @@ func main() {
 type Tokenizer struct {
 	inputFile string
 	File      *os.File
+	token     string
 }
 
 func New(path string) Tokenizer {
