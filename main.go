@@ -21,7 +21,7 @@ import (
 
 func main() {
 	JackToVm()
-	VmToHack()
+	//VmToHack()
 
 }
 
@@ -33,16 +33,17 @@ func JackToVm() {
 	for _, f := range files {
 		if filepath.Ext(f.Name()) == ".jack" {
 			token := Tokenizer.New(path + "\\" + f.Name())
-			scanner := bufio.NewScanner(token.inputFile)
-			for true {
-				if parser.HasMoreCommands(&pars, scanner) {
-					parser.Advance(scanner, &pars)
-					WriteByCommand(pars, &code)
-				} else {
-					parser.Close(pars)
-					break
-				}
+			var s string = "<tokens>" + "\n"
+			if _, err := token.OutputFile.WriteString(s); err != nil {
+				panic(err)
 			}
+			scanner := bufio.NewScanner(token.InputFile)
+			Tokenizer.Advance(scanner, token)
+			s = "</tokens>" + "\n"
+			if _, err := token.OutputFile.WriteString(s); err != nil {
+				panic(err)
+			}
+			Tokenizer.Close(token)
 		}
 
 	}
