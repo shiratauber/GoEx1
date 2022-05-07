@@ -10,6 +10,7 @@ group 43
 import (
 	"GoEx1/CodeWriter"
 	"GoEx1/Parser"
+	"GoEx1/Tokenizer"
 	"bufio"
 	"fmt"
 	"io/ioutil"
@@ -19,6 +20,35 @@ import (
 )
 
 func main() {
+	JackToVm()
+	VmToHack()
+
+}
+
+func JackToVm() {
+	var path string
+	fmt.Scanln(&path)
+	files, err := ioutil.ReadDir(path)
+	Check(err)
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".jack" {
+			token := Tokenizer.New(path + "\\" + f.Name())
+			scanner := bufio.NewScanner(token.inputFile)
+			for true {
+				if parser.HasMoreCommands(&pars, scanner) {
+					parser.Advance(scanner, &pars)
+					WriteByCommand(pars, &code)
+				} else {
+					parser.Close(pars)
+					break
+				}
+			}
+		}
+
+	}
+}
+
+func VmToHack() {
 	var path string
 	fmt.Scanln(&path)
 	code := CodeWriter.New(path)
@@ -60,7 +90,6 @@ func main() {
 
 	}
 	CodeWriter.Close(code)
-
 }
 
 func WriteByCommand(pars parser.Parser, code *CodeWriter.CodeWriter) {
