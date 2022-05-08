@@ -15,5 +15,6 @@ func New(path string) Analyzer {
 }
 
 func call() {
-
+	var stamm string = " "
+	println(stamm)
 }
