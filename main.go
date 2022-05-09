@@ -8,6 +8,7 @@ group 43
 */
 
 import (
+	"GoEx1/Analayzer"
 	"GoEx1/CodeWriter"
 	"GoEx1/Parser"
 	"GoEx1/Tokenizer"
@@ -17,15 +18,36 @@ import (
 	"log"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 func main() {
-	JackToVm()
+	//tokenizer()
+	analayzer()
 	//VmToHack()
 
 }
 
-func JackToVm() {
+func analayzer() {
+	var path string
+	fmt.Scanln(&path)
+	files, err := ioutil.ReadDir(path)
+	Check(err)
+	for _, f := range files {
+		var split string = strings.Split(f.Name(), ".")[0]
+		if filepath.Ext(f.Name()) == ".xml" && split[len(split)-2:] == "TT" {
+			ana := Analayzer.New(path + "\\" + f.Name())
+			scanner := bufio.NewScanner(ana.InputFile)
+			Analayzer.Advance(scanner, ana)
+
+			Analayzer.Close(ana)
+		}
+
+	}
+
+}
+
+func tokenizer() {
 	var path string
 	fmt.Scanln(&path)
 	files, err := ioutil.ReadDir(path)
