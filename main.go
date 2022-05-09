@@ -8,7 +8,7 @@ group 43
 */
 
 import (
-	"GoEx1/Analayzer"
+	"GoEx1/Analyzer"
 	"GoEx1/CodeWriter"
 	"GoEx1/Parser"
 	"GoEx1/Tokenizer"
@@ -36,11 +36,10 @@ func analayzer() {
 	for _, f := range files {
 		var split string = strings.Split(f.Name(), ".")[0]
 		if filepath.Ext(f.Name()) == ".xml" && split[len(split)-2:] == "TT" {
-			ana := Analayzer.New(path + "\\" + f.Name())
+			ana := Analyzer.New(path + "\\" + split[:len(split)-2])
 			scanner := bufio.NewScanner(ana.InputFile)
-			Analayzer.Advance(scanner, ana)
-
-			Analayzer.Close(ana)
+			Analyzer.WriteClass(scanner, ana)
+			Analyzer.Close(ana)
 		}
 
 	}
