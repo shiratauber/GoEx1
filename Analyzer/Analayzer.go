@@ -1,3 +1,10 @@
+/*
+Package Analyzer
+ex 4
+Shvut Lazare 213195977
+Shira Tauber 213936271
+
+*/
 package Analyzer
 
 import (
@@ -17,12 +24,10 @@ func New(path string) Analyzer {
 	inputFile, err := os.Open(path)
 	Check(err)
 
-	var split []string = strings.Split(path, "\\")
-	var last string = split[len(split)-1] //the name of the output file
-	var splitt []string = strings.Split(last, ".")
-	last = splitt[0]
+	var split []string = strings.Split(path, ".")
+	var first string = split[0]
 	//create the output file
-	outputFile, err := os.Create(last + "New.xml")
+	outputFile, err := os.Create(first + "New.xml")
 	Check(err)
 	//open the output file
 	myFile, err := os.OpenFile(outputFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
@@ -39,7 +44,7 @@ func WriteClass(scan *bufio.Scanner, a Analyzer) {
 		current += scan.Text() + "\n"
 	}
 	lines := strings.Split(current, "\n")
-	index := 2
+	index := 1
 
 	tagLevel := 0
 	writeToXML("class", tagLevel, a.OutputFile)
@@ -48,8 +53,8 @@ func WriteClass(scan *bufio.Scanner, a Analyzer) {
 	index = writeLinesToXML(lines, index, 3, tagLevel, a.OutputFile) // class className {
 
 	for true {
-		words := strings.Split(lines[index], " ")[1]
-		word := string(words[2]) // word between the tags
+		word := strings.Split(lines[index], " ")[1]
+		//word := string(words[2]) // word between the tags
 
 		if word == "static" || word == "field" {
 			index = writeClassVarDec(lines, index, tagLevel, a.OutputFile) // classVarDec*
@@ -87,8 +92,8 @@ func writeSubroutineBody(lines []string, index int, tagLevel int, output *os.Fil
 	index = writeLinesToXML(lines, index, 1, tagLevel, output) // {
 
 	for true {
-		var words = strings.Split(string(lines[index]), " ")[1] ////////////////////////////////////////////
-		var word = words[2]                                     //word between the tags
+		var word = strings.Split(string(lines[index]), " ")[1] ////////////////////////////////////////////
+		//var word = words[2]                                     //word between the tags
 
 		if string(word) == "var" {
 			index = writeVarDec(lines, index, tagLevel, output) // varDec*
@@ -112,9 +117,9 @@ func writeVarDec(lines []string, index int, tagLevel int, output *os.File) int {
 	index = writeLinesToXML(lines, index, 3, tagLevel, output) // var type varName
 
 	for true {
-		words := strings.Split(lines[index], " ")[1]
-		word := words[2] // word between the tags
-		if word == ',' {
+		word := strings.Split(lines[index], " ")[1]
+		//word := words[2] // word between the tags
+		if word == "," {
 			index = writeLinesToXML(lines, index, 2, tagLevel, output) // (, varName)*
 		} else {
 			break
@@ -131,16 +136,16 @@ func writeParameterList(lines []string, index int, tagLevel int, output *os.File
 	writeToXML("parameterList", tagLevel, output)
 	tagLevel = tagLevel + 1
 
-	words := strings.Split(lines[index], " ")[1]
-	word := words[2] // word between the tags
+	word := strings.Split(lines[index], " ")[1]
+	//word := words[2] // word between the tags
 
-	if word != ')' { // not empty list, ?
+	if word != ")" { // not empty list, ?
 		index = writeLinesToXML(lines, index, 2, tagLevel, output) // type varName
 
 		for true {
-			words := strings.Split(lines[index], " ")[1]
-			word := words[2] // word between the tags
-			if word == ',' {
+			word := strings.Split(lines[index], " ")[1]
+			//word := words[2] // word between the tags
+			if word == "," {
 				index = writeLinesToXML(lines, index, 3, tagLevel, output) // (, type varName)*
 			} else {
 				break
@@ -160,9 +165,9 @@ func writeClassVarDec(lines []string, index int, tagLevel int, output *os.File) 
 	index = writeLinesToXML(lines, index, 3, tagLevel, output) // static|field type varName
 
 	for true {
-		words := strings.Split(lines[index], " ")[1]
-		word := words[2] // word between the tags
-		if word == ',' {
+		word := strings.Split(lines[index], " ")[1]
+		//word := words[2] // word between the tags
+		if word == "," {
 			index = writeLinesToXML(lines, index, 2, tagLevel, output) // (, varName)*
 		} else {
 			break
@@ -180,8 +185,8 @@ func writeStatements(lines []string, index int, tagLevel int, output *os.File) i
 	tagLevel = tagLevel + 1
 
 	for true {
-		words := strings.Split(lines[index], " ")[1]
-		word := string(words[2]) // word between the tags
+		word := strings.Split(lines[index], " ")[1]
+		//word := string(words[2]) // word between the tags
 		if word == "let" || word == "if" || word == "while" || word == "do" || word == "return" {
 			index = writeStatement(lines, index, tagLevel, output) // statement*
 		} else {
@@ -195,8 +200,8 @@ func writeStatements(lines []string, index int, tagLevel int, output *os.File) i
 	return index
 }
 func writeStatement(lines []string, index int, tagLevel int, output *os.File) int {
-	words := strings.Split(lines[index], " ")[1]
-	word := words[2] // word between the tags
+	word := strings.Split(lines[index], " ")[1]
+	//word := words[2] // word between the tags
 
 	switch string(word) { // switch with the word, and goes to right function
 	case "let":
@@ -227,9 +232,9 @@ func writeReturnStatement(lines []string, index int, tagLevel int, output *os.Fi
 
 	index = writeLinesToXML(lines, index, 1, tagLevel, output) // return
 
-	words := strings.Split(lines[index], " ")[1]
-	word := words[2] // word between the tags
-	if word != ';' {
+	word := strings.Split(lines[index], " ")[1]
+	//word := words[2] // word between the tags
+	if word != ";" {
 		index = writeExpression(lines, index, tagLevel, output) // expression?
 	}
 
@@ -278,9 +283,9 @@ func writeIfStatement(lines []string, index int, tagLevel int, output *os.File) 
 	index = writeStatements(lines, index, tagLevel, output)    // statements
 	index = writeLinesToXML(lines, index, 1, tagLevel, output) // }
 
-	words := strings.Split(lines[index], " ")[1]
-	word := string(words[2]) // word between the tags
-	if word == "else" {      // ?
+	word := strings.Split(lines[index], " ")[1]
+	//word := string(words[2]) // word between the tags
+	if word == "else" { // ?
 		index = writeLinesToXML(lines, index, 2, tagLevel, output) // else {
 		index = writeStatements(lines, index, tagLevel, output)    // statements
 		index = writeLinesToXML(lines, index, 1, tagLevel, output) // }
@@ -297,9 +302,9 @@ func writeLetStatement(lines []string, index int, tagLevel int, output *os.File)
 
 	index = writeLinesToXML(lines, index, 2, tagLevel, output) // let varName
 
-	words := strings.Split(lines[index], " ")[1]
-	word := words[2] // word between the tags
-	if word == '[' { // ?
+	word := strings.Split(lines[index], " ")[1]
+	//word := words[2] // word between the tags
+	if word == "[" { // ?
 		index = writeLinesToXML(lines, index, 1, tagLevel, output) // [
 		index = writeExpression(lines, index, tagLevel, output)    // expression
 		index = writeLinesToXML(lines, index, 1, tagLevel, output) // ]
@@ -321,9 +326,9 @@ func writeExpression(lines []string, index int, tagLevel int, output *os.File) i
 	index = writeTerm(lines, index, tagLevel, output) // term
 
 	for true {
-		words := strings.Split(lines[index], " ")[1]
-		word := words[2]           // word between the tags
-		if TabIsOp(string(word)) { // (op term)*
+		word := strings.Split(lines[index], " ")[1]
+		//word := words[2]           // word between the tags
+		if TabIsOp(word) { // (op term)*
 			index = writeLinesToXML(lines, index, 1, tagLevel, output) // <symbol> op </symbol>
 			index = writeTerm(lines, index, tagLevel, output)          // term
 		} else {
@@ -339,8 +344,8 @@ func writeTerm(lines []string, index int, tagLevel int, output *os.File) int {
 	writeToXML("term", tagLevel, output)
 	tagLevel = tagLevel + 1
 
-	var words = strings.Split(string(lines[index]), " ")[1]
-	var firstWord = words[1] // the opening tag
+	var words = strings.Split(string(lines[index]), " ")
+	var firstWord = words[0] // the opening tag
 
 	switch string(firstWord) { //switch with the word
 	case "<integerConstant>":
@@ -350,7 +355,7 @@ func writeTerm(lines []string, index int, tagLevel int, output *os.File) int {
 		index = writeLinesToXML(lines, index, 1, tagLevel, output) // <stringConstant> string  </stringConstant>
 
 	case "<keyword>":
-		var secondWord = string(words[2]) // word between tags
+		var secondWord = string(words[1]) // word between tags
 		if TabIsKeyword(secondWord) {
 			index = writeLinesToXML(lines, index, 1, tagLevel, output) //<keyword> keywordConstant </keyword>
 		} else {
@@ -358,14 +363,14 @@ func writeTerm(lines []string, index int, tagLevel int, output *os.File) int {
 		}
 
 	case "<identifier>": // multiple options
-		var words = strings.Split(string(lines[index+1]), " ")[1] // next line
-		var word = words[2]                                       //word between tags
+		var word = strings.Split(string(lines[index+1]), " ")[1] // next line
+		//var word = words[2]                                       //word between tags
 
-		if word == '[' { // varName [ expression ]
+		if word == "[" { // varName [ expression ]
 			index = writeLinesToXML(lines, index, 2, tagLevel, output) // varName [
 			index = writeExpression(lines, index, tagLevel, output)    // expression
 			index = writeLinesToXML(lines, index, 1, tagLevel, output) // ]
-		} else if word == '(' || word == '.' { // subroutineCall
+		} else if word == "(" || word == "." { // subroutineCall
 			index = writeSubroutineCall(lines, index, tagLevel, output) // subroutineCall
 		} else { // varName
 			index = writeLinesToXML(lines, index, 1, tagLevel, output) // varName
@@ -373,12 +378,12 @@ func writeTerm(lines []string, index int, tagLevel int, output *os.File) int {
 
 	case "<symbol>":
 		//( or unaryOp
-		secondWord := words[2] // word between tags
+		secondWord := words[1] // word between tags
 
 		if TabIsUnaryOp(string(secondWord)) {
 			index = writeLinesToXML(lines, index, 1, tagLevel, output) // <symbol> unaryOp </symbol>
 			index = writeTerm(lines, index, tagLevel, output)          //term
-		} else if secondWord == '(' {
+		} else if secondWord == "(" {
 			index = writeLinesToXML(lines, index, 1, tagLevel, output) //(
 			index = writeExpression(lines, index, tagLevel, output)    //expression
 			index = writeLinesToXML(lines, index, 1, tagLevel, output) // )
@@ -397,13 +402,13 @@ func writeTerm(lines []string, index int, tagLevel int, output *os.File) int {
 func writeSubroutineCall(lines []string, index int, tagLevel int, output *os.File) int {
 	index = writeLinesToXML(lines, index, 1, tagLevel, output) // identifier
 
-	var words = strings.Split(lines[index], " ")[1] ///////////////////////////////////////////////
-	var word = words[2]                             // word between the tags
-	if word == '(' {                                //( expressionList )
+	var word = strings.Split(lines[index], " ")[1]
+	//var word = words[2] // word between the tags
+	if word == "(" { //( expressionList )
 		index = writeLinesToXML(lines, index, 1, tagLevel, output)  // (
 		index = writeExpressionList(lines, index, tagLevel, output) // expressionList
 		index = writeLinesToXML(lines, index, 1, tagLevel, output)  // )
-	} else if word == '.' { // . identifier ( expressionList )
+	} else if word == "." { // . identifier ( expressionList )
 		index = writeLinesToXML(lines, index, 3, tagLevel, output)  // . identifier (
 		index = writeExpressionList(lines, index, tagLevel, output) // expressionList
 		index = writeLinesToXML(lines, index, 1, tagLevel, output)  // )
@@ -416,16 +421,16 @@ func writeExpressionList(lines []string, index int, tagLevel int, output *os.Fil
 	writeToXML("expressionList", tagLevel, output)
 	tagLevel = tagLevel + 1
 
-	var words = strings.Split(string(lines[index]), " ")[1]
-	var word = words[2] // word between the tags
+	var word = strings.Split(string(lines[index]), " ")[1]
+	//var word = words[2] // word between the tags
 
-	if word != ')' { // not empty list
+	if word != ")" { // not empty list
 		index = writeExpression(lines, index, tagLevel, output) // expression
 
 		for true {
-			words = strings.Split(string(lines[index]), " ")[1]
-			word = words[2]  // word between the tags
-			if word == ',' { // (, expression)*
+			word = strings.Split(string(lines[index]), " ")[1]
+			//word = words[2]  // word between the tags
+			if word == "," { // (, expression)*
 				index = writeLinesToXML(lines, index, 1, tagLevel, output) // ,
 				index = writeExpression(lines, index, tagLevel, output)    // expression
 			} else {
@@ -436,22 +441,24 @@ func writeExpressionList(lines []string, index int, tagLevel int, output *os.Fil
 
 	tagLevel = tagLevel - 1
 	writeToXML("/expressionList", tagLevel, output)
-
 	return index
 }
 
 func writeLinesToXML(lines []string, index int, numberOfLines int, levelXML int, output *os.File) int {
 	for numberOfLines > 0 {
-		writeToXML(lines[index], levelXML, output) //////////////////////
+		writeToXML(lines[index], levelXML, output)
 		numberOfLines = numberOfLines - 1
 		index = index + 1
 	}
 	return index
 }
 func writeToXML(content string, levelXML int, output *os.File) {
-	spaces := ""
+	spaces := "\n"
+	if content == "class" {
+		spaces = ""
+	}
 	for levelXML > 0 {
-		spaces += "\t" // tab spaces
+		spaces += "  " // tab spaces
 		levelXML = levelXML - 1
 	}
 

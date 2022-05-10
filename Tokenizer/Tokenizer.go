@@ -19,12 +19,10 @@ func New(path string) Tokenizer {
 	inputFile, err := os.Open(path)
 	Check(err)
 
-	var split []string = strings.Split(path, "\\")
-	var last string = split[len(split)-1] //the name of the output file
-	var splitt []string = strings.Split(last, ".")
-	last = splitt[0]
+	var split []string = strings.Split(path, ".")
+	var first string = split[0]
 	//create the output file
-	outputFile, err := os.Create(last + "TT.xml")
+	outputFile, err := os.Create(first + "TT.xml")
 	Check(err)
 	//open the output file
 	myFile, err := os.OpenFile(outputFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)

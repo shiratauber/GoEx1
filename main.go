@@ -18,25 +18,24 @@ import (
 	"log"
 	"path/filepath"
 	"strconv"
-	"strings"
 )
 
 func main() {
-	//tokenizer()
-	analayzer()
+	tokenizer()
+	//analayzer()
 	//VmToHack()
 
 }
 
-func analayzer() {
-	var path string
-	fmt.Scanln(&path)
+func analayzer(path string) {
+	//var path string
+	//fmt.Scanln(&path)
 	files, err := ioutil.ReadDir(path)
 	Check(err)
 	for _, f := range files {
-		var split string = strings.Split(f.Name(), ".")[0]
-		if filepath.Ext(f.Name()) == ".xml" && split[len(split)-2:] == "TT" {
-			ana := Analyzer.New(path + "\\" + split[:len(split)-2])
+		//var split string = strings.Split(f.Name(), ".")[0]
+		if filepath.Ext(f.Name()) == ".xml" && filepath.Base(f.Name())[len(filepath.Base(f.Name()))-6:] == "TT.xml" {
+			ana := Analyzer.New(path + "\\" + f.Name())
 			scanner := bufio.NewScanner(ana.InputFile)
 			Analyzer.WriteClass(scanner, ana)
 			Analyzer.Close(ana)
@@ -68,6 +67,7 @@ func tokenizer() {
 		}
 
 	}
+	analayzer(path)
 }
 
 func VmToHack() {
