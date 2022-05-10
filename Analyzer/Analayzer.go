@@ -68,6 +68,9 @@ func WriteClass(scan *bufio.Scanner, a Analyzer) {
 	index = writeLinesToXML(lines, index, 1, tagLevel, a.OutputFile) // }
 	tagLevel = tagLevel - 1
 	writeToXML("/class", tagLevel, a.OutputFile)
+	if _, err := a.OutputFile.WriteString("\n"); err != nil {
+		panic(err)
+	}
 
 }
 func writeSubroutineDec(lines []string, index int, tagLevel int, output *os.File) int {
