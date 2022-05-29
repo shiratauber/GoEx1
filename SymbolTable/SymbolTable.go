@@ -19,13 +19,13 @@ func New() SymbolTable {
 	return mofa
 
 }
-func startSubroutine(s *SymbolTable) {
+func StartSubroutine(s *SymbolTable) {
 	s.subroutineSymbols = make(map[string]Symbol.Symbol)
 	s.indices["ARG"] = 0
 	s.indices["VAR"] = 0
 }
 
-func define(name string, t string, kind string, s *SymbolTable) {
+func Define(name string, t string, kind string, s *SymbolTable) {
 	if kind == "ARG" || kind == "VAR" {
 		var index = s.indices[kind]
 		var sym = Symbol.New(t, kind, index)

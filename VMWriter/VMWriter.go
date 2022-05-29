@@ -10,16 +10,16 @@ type Writer struct {
 	OutputFile *os.File
 }
 
-func New(output string) Writer {
+func New(outputFile *os.File) Writer {
 
 	//create the output file
-	outputFile, err := os.Create(output + ".vm")
-	Check(err)
+	//outputFile, err := os.Create(output + ".vm")
+	//Check(err)
 	//open the output file
-	myFile, err := os.OpenFile(outputFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
-	Check(err)
+	//myFile, err := os.OpenFile(outputFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
+	//Check(err)
 
-	mofa := Writer{myFile}
+	mofa := Writer{outputFile}
 	return mofa
 
 }
