@@ -16,14 +16,45 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 func main() {
 	tokenizer()
 	//analayzer()
+	jackCompiler()
 	//VmToHack()
+
+}
+
+func jackCompiler() {
+	var path string
+	fmt.Scanln(&path)
+	files, err := ioutil.ReadDir(path)
+	Check(err)
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".jack" {
+			//token := Tokenizer.New(path + "\\" + f.Name())
+			inputFile, err := os.Open(path + "\\" + f.Name())
+			Check(err)
+
+			var split []string = strings.Split(path+"\\"+f.Name(), ".")
+			var first string = split[0]
+			//create the output file
+			outputFile, err := os.Create(first + ".vm")
+			Check(err)
+			//open the output file
+			outputFile, err = os.OpenFile(outputFile.Name(), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0777)
+			Check(err)
+
+			coEn := CompilationEngine.New(inputFile, outputFile)
+
+		}
+
+	}
 
 }
 
