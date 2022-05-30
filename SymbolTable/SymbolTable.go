@@ -41,7 +41,7 @@ func Define(name string, t string, kind string, s *SymbolTable) {
 }
 
 //Returns the number of variables of the given kind already defined in the current scope.
-func varCount(kind string, s *SymbolTable) int {
+func VarCount(kind string, s *SymbolTable) int {
 	return s.indices[kind]
 }
 

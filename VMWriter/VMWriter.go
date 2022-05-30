@@ -24,23 +24,23 @@ func New(outputFile *os.File) Writer {
 
 }
 
-func writePush(segment int, index int, c Writer) {
-	var s string = "push " + strconv.Itoa(segment) + " " + strconv.Itoa(index) + "\n"
+func WritePush(segment string, index int, c Writer) {
+	var s string = "push " + segment + " " + strconv.Itoa(index) + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
 	}
 
 }
 
-func writePop(segment int, index int, c Writer) {
-	var s string = "pop " + strconv.Itoa(segment) + " " + strconv.Itoa(index) + "\n"
+func WritePop(segment string, index int, c Writer) {
+	var s string = "pop " + segment + " " + strconv.Itoa(index) + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
 	}
 
 }
 
-func writeCommand(command string, c Writer) {
+func WriteCommand(command string, c Writer) {
 	var s string = command + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
@@ -48,7 +48,7 @@ func writeCommand(command string, c Writer) {
 
 }
 
-func writeLabel(label string, c Writer) {
+func WriteLabel(label string, c Writer) {
 	var s string = label + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
@@ -56,7 +56,7 @@ func writeLabel(label string, c Writer) {
 
 }
 
-func writeGoto(label string, c Writer) {
+func WriteGoto(label string, c Writer) {
 	var s string = "goto " + label + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
@@ -64,7 +64,7 @@ func writeGoto(label string, c Writer) {
 
 }
 
-func writeIf(label string, c Writer) {
+func WriteIf(label string, c Writer) {
 	var s string = "if-goto " + label + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
@@ -72,7 +72,7 @@ func writeIf(label string, c Writer) {
 
 }
 
-func writeCall(name string, nArgs int, c Writer) {
+func WriteCall(name string, nArgs int, c Writer) {
 	var s string = "call " + name + " " + strconv.Itoa(nArgs) + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
@@ -80,7 +80,7 @@ func writeCall(name string, nArgs int, c Writer) {
 
 }
 
-func writeFunction(name string, nLocals int, c Writer) {
+func WriteFunction(name string, nLocals int, c Writer) {
 	var s string = "function " + name + " " + strconv.Itoa(nLocals) + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
@@ -88,7 +88,7 @@ func writeFunction(name string, nLocals int, c Writer) {
 
 }
 
-func writeReturn(c Writer) {
+func WriteReturn(c Writer) {
 	var s string = "return" + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)

@@ -182,7 +182,7 @@ func CompileSubroutine(c *CompilationEngine) {
 	RequireSymbol(")", c)
 
 	// subroutineBody
-	CompileSubroutineBody(keyword)
+	CompileSubroutineBody(keyword, c)
 
 	CompileSubroutine(c)
 
@@ -190,37 +190,37 @@ func CompileSubroutine(c *CompilationEngine) {
 
 // Compiles the body of a subroutine.
 // '{'  varDec* statements '}'
-compileSubroutineBody = function(keyword) {
-// '{'
-self$requireSymbol('{')
-// varDec*
-self$compileVarDec()
-// write VM function declaration
-self$writeFunctionDec(keyword)
-// statements
-self$compileStatement()
-// '}'
-self$requireSymbol('}')
-},
-
-// Writes function declaration, load pointer when keyword is METHOD or CONSTRUCTOR.
-writeFunctionDec = function(keyword) {
-self$vmWriter$writeFunction(self$currentFunction(), self$symbolTable$varCount("VAR"))
-
-// METHOD and CONSTRUCTOR need to load this pointer
-if (keyword == "METHOD") {
-// A Jack method with k arguments is compiled into a VM function that operates on k + 1 arguments.
-// The first argument (argument number 0) always refers to the this object.
-self$vmWriter$writePush("argument", 0)
-self$vmWriter$writePop("pointer", 0)
-} else if (keyword == "CONSTRUCTOR") {
-// A Jack function or constructor with k arguments is compiled into a VM function that operates on k arguments.
-self$vmWriter$writePush("constant", self$symbolTable$varCount("FIELD"))
-self$vmWriter$writeCall("Memory.alloc", 1)
-self$vmWriter$writePop("pointer", 0)
+func CompileSubroutineBody(keyword string, c *CompilationEngine) {
+	// '{'
+	RequireSymbol("{", c)
+	// varDec*
+	CompileVarDec()
+	// write VM function declaration
+	WriteFunctionDec(keyword, c)
+	// statements
+	CompileStatement()
+	// '}'
+	RequireSymbol("}", c)
 }
 
-},
+// Writes function declaration, load pointer when keyword is METHOD or CONSTRUCTOR.
+func WriteFunctionDec(keyword string, c *CompilationEngine) {
+	VMWriter.WriteFunction(CurrentFunction(), SymbolTable.VarCount("VAR", &c.symbolTable), c.vmWriter)
+
+	// METHOD and CONSTRUCTOR need to load this pointer
+	if keyword == "METHOD" {
+		// A Jack method with k arguments is compiled into a VM function that operates on k + 1 arguments.
+		// The first argument (argument number 0) always refers to the this object.
+		VMWriter.WritePush("argument", 0, c.vmWriter)
+		VMWriter.WritePop("pointer", 0, c.vmWriter)
+	} else if keyword == "CONSTRUCTOR" {
+		// A Jack function or constructor with k arguments is compiled into a VM function that operates on k arguments.
+		VMWriter.WritePush("constant", SymbolTable.VarCount("FIELD", &c.symbolTable), c.vmWriter)
+		VMWriter.WriteCall("Memory.alloc", 1, c.vmWriter)
+		VMWriter.WritePop("pointer", 0, c.vmWriter)
+	}
+
+}
 
 // Compiles a single statement.
 compileStatement = function() {
