@@ -1,21 +1,11 @@
 package CompilationEnginesource
 
 import (
-	"GoEx1/SymbolTable"
-	"GoEx1/VMWriter"
+	"GoEx1/Symbol"
 	"GoEx1/jackTokenizer"
-	"os"
-)
-
-("JackTokenizer.R")
-source("VMWriter.R")
-source("SymbolTable.R")
-import (
-"GoEx1/Symbol"
-"GoEx1/jackTokenizer"
-"GoEx1/VMWriter"
-"GoEx1/SymbolTable"
-
+	"GoEx1/VMWriter"
+	"GoEx1/SymbolTable"
+		"os"
 )
 type CompilationEngine struct {
 	tokenizer jackTokenizer.JackTokenizer
@@ -40,12 +30,12 @@ func New(inputFile *os.File, outputFile *os.File) CompilationEngine {
 }
 
 func compileClass(c *CompilationEngine)  {
-	jackTokenizer.Advance(c.tokenizer)
+	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || jackTokenizer.KeyWord(c.tokenizer) != "CLASS" {
 		print("ERROR IN ADVANCE OF COMPILECLASS")
 	}
 
-	jackTokenizer.Advance(c.tokenizer)
+	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER"{
 		print("EXPECTED CLASSNAME")
 	}
@@ -53,13 +43,26 @@ func compileClass(c *CompilationEngine)  {
     c.currentClass=jackTokenizer.Identifier(c.tokenizer)
     RequireSymbol("{", c)
 
+	// classVarDec* subroutineDec*
+	CompileClassVarDec(c)
+	CompileSubroutine(c)
+
+	RequireSymbol("}", c)              //  }
+
+	if jackTokenizer.HasMoreTokens(&c.tokenizer) {
+		print("Unexpected tokens!")
+		return
+	}
+
+	VMWriter.Close(c.vmWriter)
+
 
 
 
 
 }
 func RequireSymbol(s string, c *CompilationEngine)  {
-	jackTokenizer.Advance(c.tokenizer)
+	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || jackTokenizer.Symbol(c.tokenizer)!= s {
 		print("ERROR EXPECTED SYMBOL")
 	}
@@ -67,165 +70,151 @@ func RequireSymbol(s string, c *CompilationEngine)  {
 }
 
 
-self$requireSymbol('{')              ##   {
+// Compiles a static declaration or a field declaration.
+// classVarDec ('static'|'field') type varName (','varNAme)* ';'
+func CompileClassVarDec(c *CompilationEngine) {
+	// print("compileClassVarDec")
+	// first determine whether there is a classVarDec, nextToken is } or start subroutineDec
+	jackTokenizer.Advance(&c.tokenizer)
 
-## classVarDec* subroutineDec*
-self$compileClassVarDec()
-self$compileSubroutine()
+	// next is }
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "}" {
+		jackTokenizer.PointerBack(&c.tokenizer)
+		return
+	}
 
-self$requireSymbol('}')              ##   }
+	// next is start subroutineDec or classVarDec, both start with keyword
+	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" {
+		print("Expected keyword")
+	}
 
-if (self$tokenizer$hasMoreTokens()) {
-self$throwException("Unexpected tokens!")
+	// next is subroutineDec
+	if jackTokenizer.KeyWord(c.tokenizer) == "CONSTRUCTOR"|| jackTokenizer.KeyWord(c.tokenizer) == "FUNCTION"|| jackTokenizer.KeyWord(c.tokenizer) == "METHOD" {
+		jackTokenizer.PointerBack(&c.tokenizer)
+		return
+	}
+
+	// classVarDec exists
+	if !(jackTokenizer.KeyWord(c.tokenizer) =="STATIC" ||jackTokenizer.KeyWord(c.tokenizer) == "FIELD") {
+		print("Expected static or field")
+	}
+
+	kind := jackTokenizer.KeyWord(c.tokenizer)
+	typeTok := CompileType()
+
+	for true{
+			// varName
+			jackTokenizer.Advance(&c.tokenizer)
+			if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+			print("Expected identifier")
+		}
+
+		name := jackTokenizer.Identifier(c.tokenizer)
+		SymbolTable.Define(name, typeTok, kind, &c.symbolTable)
+
+		// , or ;
+		jackTokenizer.Advance(&c.tokenizer)
+
+		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !(jackTokenizer.Symbol(c.tokenizer) ==","|| jackTokenizer.Symbol(c.tokenizer)==";" ) {
+			print("Expected , or ;")
+		}
+
+		if jackTokenizer.Symbol(c.tokenizer) == ";" {
+			break
+		}
+
+	}
+
+	CompileClassVarDec(c)
 }
 
-self$vmWriter$close()
-},
+// Compiles a complete method, function or constructor.
+func CompileSubroutine(c *CompilationEngine) {
+	// determine whether there is a subroutine, next can be a '}'
+	jackTokenizer.Advance(&c.tokenizer)
 
-## Compiles a static declaration or a field declaration.
-## classVarDec ('static'|'field') type varName (','varNAme)* ';'
-compileClassVarDec = function() {
-# print("compileClassVarDec")
-## first determine whether there is a classVarDec, nextToken is } or start subroutineDec
-self$tokenizer$advance()
+	// next is a '}'
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "}" {
+		jackTokenizer.PointerBack(&c.tokenizer)
+		return
+	}
 
-## next is }
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '}') {
-self$tokenizer$pointerBack()
-return()
+	// start of a subroutine
+	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || !(jackTokenizer.KeyWord(c.tokenizer)=="CONSTRUCTOR" ||
+		jackTokenizer.KeyWord(c.tokenizer) =="FUNCTION"||jackTokenizer.KeyWord(c.tokenizer)== "METHOD") {
+		print("Expected constructor or function or method")
+	}
+
+	keyword := jackTokenizer.KeyWord(c.tokenizer)
+	SymbolTable.StartSubroutine(&c.symbolTable)
+
+	// for method this is the first argument
+	if keyword == "METHOD" {
+		SymbolTable.Define("this", c.currentClass, "ARG", &c.symbolTable)
+	}
+
+	typeTok := ""
+
+	// 'void' or typeTok
+	jackTokenizer.Advance(&c.tokenizer)
+	if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.KeyWord(c.tokenizer) == "VOID" {
+	typeTok  = "void"
+	} else {
+		jackTokenizer.PointerBack(&c.tokenizer)
+	typeTok  = CompileType()
+	}
+
+	// subroutineName which is a identifier
+	jackTokenizer.Advance(&c.tokenizer)
+	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+		print("Expected subroutineName")
+	}
+
+	c.currentSubroutine = jackTokenizer.Identifier(c.tokenizer)
+
+	// '('
+	RequireSymbol("(", c)
+
+	// parameterList
+	CompileParameterList()
+
+	// ')'
+	RequireSymbol(")", c)
+
+	// subroutineBody
+	CompileSubroutineBody(keyword)
+
+	CompileSubroutine(c)
+
 }
 
-## next is start subroutineDec or classVarDec, both start with keyword
-if (self$tokenizer$tokenType() != "KEYWORD") {
-self$throwException("Expected keyword")
-}
-
-## next is subroutineDec
-if (self$tokenizer$keyWord() %in% c("CONSTRUCTOR", "FUNCTION", "METHOD")) {
-self$tokenizer$pointerBack()
-return()
-}
-
-## classVarDec exists
-if (!(self$tokenizer$keyWord() %in% c("STATIC", "FIELD"))) {
-self$throwException("Expected static or field")
-}
-
-kind <- self$tokenizer$keyWord()
-type <- self$compileType()
-
-repeat{
-## varName
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() != "IDENTIFIER") {
-self$throwException("Expected identifier")
-}
-
-name <- self$tokenizer$identifier()
-self$symbolTable$define(name, type, kind)
-
-## , or ;
-self$tokenizer$advance()
-
-if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c(",", ";") )) {
-self$throwException("Expected , or ;")
-}
-
-if (self$tokenizer$symbol() == ';') {
-break
-}
-
-}
-
-self$compileClassVarDec()
-},
-
-## Compiles a complete method, function or constructor.
-compileSubroutine = function() {
-## determine whether there is a subroutine, next can be a '}'
-self$tokenizer$advance()
-
-## next is a '}'
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '}') {
-self$tokenizer$pointerBack()
-return()
-}
-
-## start of a subroutine
-if (self$tokenizer$tokenType() != "KEYWORD" | !(self$tokenizer$keyWord() %in% c("CONSTRUCTOR", "FUNCTION", "METHOD"))) {
-self$throwException("Expected constructor or function or method")
-}
-
-keyword <- self$tokenizer$keyWord()
-self$symbolTable$startSubroutine()
-
-## for method this is the first argument
-if (keyword == "METHOD") {
-self$symbolTable$define("this", self$currentClass, "ARG")
-}
-
-type <- ""
-
-## 'void' or type
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() == "VOID") {
-type <- "void"
-} else {
-self$tokenizer$pointerBack()
-type <- self$compileType()
-}
-
-## subroutineName which is a identifier
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() != "IDENTIFIER") {
-self$throwException("Expected subroutineName")
-}
-
-self$currentSubroutine <- self$tokenizer$identifier()
-
-## '('
-self$requireSymbol('(')
-
-## parameterList
-self$compileParameterList()
-
-## ')'
-self$requireSymbol(')')
-
-## subroutineBody
-self$compileSubroutineBody(keyword)
-
-self$compileSubroutine()
-
-},
-
-## Compiles the body of a subroutine.
-## '{'  varDec* statements '}'
+// Compiles the body of a subroutine.
+// '{'  varDec* statements '}'
 compileSubroutineBody = function(keyword) {
-## '{'
+// '{'
 self$requireSymbol('{')
-## varDec*
+// varDec*
 self$compileVarDec()
-## write VM function declaration
+// write VM function declaration
 self$writeFunctionDec(keyword)
-## statements
+// statements
 self$compileStatement()
-## '}'
+// '}'
 self$requireSymbol('}')
 },
 
-## Writes function declaration, load pointer when keyword is METHOD or CONSTRUCTOR.
+// Writes function declaration, load pointer when keyword is METHOD or CONSTRUCTOR.
 writeFunctionDec = function(keyword) {
 self$vmWriter$writeFunction(self$currentFunction(), self$symbolTable$varCount("VAR"))
 
-## METHOD and CONSTRUCTOR need to load this pointer
+// METHOD and CONSTRUCTOR need to load this pointer
 if (keyword == "METHOD") {
-## A Jack method with k arguments is compiled into a VM function that operates on k + 1 arguments.
-## The first argument (argument number 0) always refers to the this object.
+// A Jack method with k arguments is compiled into a VM function that operates on k + 1 arguments.
+// The first argument (argument number 0) always refers to the this object.
 self$vmWriter$writePush("argument", 0)
 self$vmWriter$writePop("pointer", 0)
 } else if (keyword == "CONSTRUCTOR") {
-## A Jack function or constructor with k arguments is compiled into a VM function that operates on k arguments.
+// A Jack function or constructor with k arguments is compiled into a VM function that operates on k arguments.
 self$vmWriter$writePush("constant", self$symbolTable$varCount("FIELD"))
 self$vmWriter$writeCall("Memory.alloc", 1)
 self$vmWriter$writePop("pointer", 0)
@@ -233,18 +222,18 @@ self$vmWriter$writePop("pointer", 0)
 
 },
 
-## Compiles a single statement.
+// Compiles a single statement.
 compileStatement = function() {
-## determine whether there is a statement next can be a '}'
+// determine whether there is a statement next can be a '}'
 self$tokenizer$advance()
 
-## next is a '}'
+// next is a '}'
 if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '}'){
 self$tokenizer$pointerBack()
 return()
 }
 
-## next is 'let'|'if'|'while'|'do'|'return'
+// next is 'let'|'if'|'while'|'do'|'return'
 if (self$tokenizer$tokenType() != "KEYWORD") {
 self$throwException("Expected keyword")
 } else {
@@ -264,7 +253,7 @@ self$compileDo()
 "RETURN"={
 self$compileReturn()
 },
-{   ##   default
+{   //   default
 self$throwException("Expected let or if or while or do or return")
 }
 )
@@ -273,32 +262,32 @@ self$throwException("Expected let or if or while or do or return")
 self$compileStatement()
 },
 
-## Compiles a (possibly empty) parameter list,
-## not including the enclosing "()".
-## ((type varName)(',' type varName)*)?
+// Compiles a (possibly empty) parameter list,
+// not including the enclosing "()".
+// ((type varName)(',' type varName)*)?
 compileParameterList = function() {
-## Check if there is parameterList, if next token is ')' than go back
+// Check if there is parameterList, if next token is ')' than go back
 self$tokenizer$advance()
 if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == ')'){
 self$tokenizer$pointerBack()
 return()
 }
 
-## there is parameter, at least one varName
+// there is parameter, at least one varName
 self$tokenizer$pointerBack()
 repeat{
-## type
-type <- self$compileType()
+// typeTok
+typeTok  <- self$compileType()
 
-## varName
+// varName
 self$tokenizer$advance()
 if (self$tokenizer$tokenType() != "IDENTIFIER") {
 self$throwException("Expected identifier")
 }
 
-self$symbolTable$define(self$tokenizer$identifier(), type, "ARG")
+self$symbolTable$define(self$tokenizer$identifier(), typeTok , "ARG")
 
-## ',' or ')'
+// ',' or ')'
 self$tokenizer$advance()
 if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c(",", ")"))) {
 self$throwException("Expected , or )")
@@ -311,31 +300,31 @@ break
 }
 },
 
-## Compiles a var declaration.
-## 'var' type varName (',' varName)*;
+// Compiles a var declaration.
+// 'var' type varName (',' varName)*;
 compileVarDec = function() {
-## determine if there is a varDec
+// determine if there is a varDec
 self$tokenizer$advance()
-## no 'var' go back
+// no 'var' go back
 if (self$tokenizer$tokenType() != "KEYWORD" | self$tokenizer$keyWord() != "VAR"){
 self$tokenizer$pointerBack()
 return()
 }
 
-## type
-type <- self$compileType()
+// typeTok
+typeTok  <- self$compileType()
 
 repeat{
-## varName
+// varName
 self$tokenizer$advance()
 
 if (self$tokenizer$tokenType() != "IDENTIFIER") {
 self$throwException("Expected identifier")
 }
 
-self$symbolTable$define(self$tokenizer$identifier(), type, "VAR")
+self$symbolTable$define(self$tokenizer$identifier(), typeTok , "VAR")
 
-## ',' or ';'
+// ',' or ';'
 self$tokenizer$advance()
 
 if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c(",", ";"))) {
@@ -350,21 +339,21 @@ break
 self$compileVarDec()
 },
 
-# compileStatements = function() {},
+//compileStatements = function() {},
 
-## Compiles a do statement.
-## 'do' subroutineCall ';'
+// Compiles a do statement.
+// 'do' subroutineCall ';'
 compileDo = function() {
-## subroutineCall
+// subroutineCall
 self$compileSubroutineCall()
-## ';'
+// ';'
 self$requireSymbol(';')
-## pop return value
+// pop return value
 self$vmWriter$writePop("temp", 0)
 },
 
-## Compiles a subroutine call.
-## subroutineName '(' expressionList ')' | (className|varName) '.' subroutineName '(' expressionList ')'
+// Compiles a subroutine call.
+// subroutineName '(' expressionList ')' | (className|varName) '.' subroutineName '(' expressionList ')'
 compileSubroutineCall = function() {
 self$tokenizer$advance()
 if (self$tokenizer$tokenType() != "IDENTIFIER"){
@@ -376,20 +365,20 @@ nArgs <- 0
 
 self$tokenizer$advance()
 if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '(') {
-## push this pointer
+// push this pointer
 self$vmWriter$writePush("pointer", 0)
-## '(' expressionList ')'
-## expressionList
+// '(' expressionList ')'
+// expressionList
 nArgs <- self$compileExpressionList() + 1
-## ')'
+// ')'
 self$requireSymbol(')')
-## call subroutine
+// call subroutine
 self$vmWriter$writeCall(paste(self$currentClass, '.', name, sep=""), nArgs)
 } else if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '.') {
-## (className|varName) '.' subroutineName '(' expressionList ')'
+// (className|varName) '.' subroutineName '(' expressionList ')'
 
 objName <- name
-## subroutineName
+// subroutineName
 self$tokenizer$advance()
 
 if (self$tokenizer$tokenType() != "IDENTIFIER"){
@@ -398,27 +387,27 @@ self$throwException("Expected identifier")
 
 name <- self$tokenizer$identifier()
 
-## check for if it is built-in type
-type <- self$symbolTable$typeOf(objName)
+// check for if it is built-in typeTok
+typeTok  <- self$symbolTable$typeOf(objName)
 
-if (type %in% c("int", "boolean", "char", "void")) {
+if (typeTok  %in% c("int", "boolean", "char", "void")) {
 self$throwException("No built-in type")
-} else if (type == "") {
+} else if (typeTok  == "") {
 name <- paste(objName, ".", name, sep="")
 } else {
 nArgs <- 1
-## push variable directly onto stack
+// push variable directly onto stack
 self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(objName)), self$symbolTable$indexOf(objName))
 name <- paste(self$symbolTable$typeOf(objName), ".", name, sep="")
 }
 
-## '('
+// '('
 self$requireSymbol('(')
-## expressionList
+// expressionList
 nArgs <- nArgs + self$compileExpressionList()
-## ')'
+ ')'
 self$requireSymbol(')')
-## call subroutine
+ call subroutine
 self$vmWriter$writeCall(name, nArgs)
 
 } else {
@@ -426,19 +415,19 @@ self$throwException("Expected ( or .")
 }
 },
 
-## Compiles a let statement
-## 'let' varName ('[' ']')? '=' expression ';'
-compileLet = function() {   ## let diff = y - x;
-## varName
+ Compiles a let statement
+ 'let' varName ('[' ']')? '=' expression ';'
+compileLet = function() {   // let diff = y - x;
+// varName
 self$tokenizer$advance()
 if (self$tokenizer$tokenType() != "IDENTIFIER") {
 self$throwException("Expected varName")
 }
 
 varName <- self$tokenizer$identifier()
-# print(paste("VARNAME :", varName))
+// print(paste("VARNAME :", varName))
 
-## '[' or '='
+// '[' or '='
 self$tokenizer$advance()
 if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c("[", "="))) {
 self$throwException("Expected [ or =")
@@ -446,20 +435,20 @@ self$throwException("Expected [ or =")
 
 expExist <- FALSE
 
-## '[' expression ']' , need to deal with array [base + offset]
+// '[' expression ']' , need to deal with array [base + offset]
 if (self$tokenizer$symbol() == '[') {
 expExist <- TRUE
 
-## calc offset
+// calc offset
 self$compileExpression()
 
-## ']'
+// ']'
 self$requireSymbol(']')
 
-## push array variable,base address into stack
+// push array variable,base address into stack
 self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(varName)), self$symbolTable$indexOf(varName))
 
-## base + offset
+// base + offset
 self$vmWriter$writeArithmetic("add")
 }
 
@@ -467,32 +456,32 @@ if (expExist == TRUE) {
 self$tokenizer$advance()
 }
 
-## expression
+// expression
 self$compileExpression()
 
-## ';'
+// ';'
 self$requireSymbol(';')
 
 if (expExist == TRUE) {
-## *(base + offset) = expression
-## pop expression value to temp
+// *(base + offset) = expression
+// pop expression value to temp
 self$vmWriter$writePop("temp", 0)
-## pop base + index into 'that'
-# self$vmWriter$writePop("pointer", 0)
+// pop base + index into 'that'
+// self$vmWriter$writePop("pointer", 0)
 self$vmWriter$writePop("pointer", 1)
-## pop expression value into *(base + index)
+// pop expression value into *(base + index)
 self$vmWriter$writePush("temp", 0)
 self$vmWriter$writePop("that", 0)
-# print(paste("VARNEME :", varName))
+//print(paste("VARNEME :", varName))
 } else {
-## pop expression value directly
+// pop expression value directly
 self$vmWriter$writePop(self$getSeg(self$symbolTable$kindOf(varName)), self$symbolTable$indexOf(varName))
-# print(paste("VARNEME :", varName))
+// print(paste("VARNEME :", varName))
 }
 
 },
 
-## Returns corresponding segment for input kind.
+// Returns corresponding segment for input kind.
 getSeg = function(kind) {
 switch(kind,
 "FIELD"={
@@ -507,81 +496,48 @@ return("local")
 "ARG"={
 return("argument")
 },
-{   ##   default
+{   //   default
 return("NONE")
 }
 )
 },
 
-## Compiles a while statement.
-## 'while' '(' expression ')' '{' statements '}'
+// Compiles a while statement.
+// 'while' '(' expression ')' '{' statements '}'
 compileWhile = function() {
 whileExpLabel <- paste("WHILE_EXP", self$labelCounterWhile, sep="")
 whileEndLabel <- paste("WHILE_END", self$labelCounterWhile, sep="")
 self$labelCounterWhile <- self$labelCounterWhile + 1
 
-## top label for while loop
+// top label for while loop
 self$vmWriter$writeLabel(whileExpLabel)
 
-## '('
+// '('
 self$requireSymbol('(')
-## expression while condition: true or false
+// expression while condition: true or false
 self$compileExpression()
-## ')'
+// ')'
 self$requireSymbol(')')
 
-## if ~(condition) go to continue label
+// if ~(condition) go to continue label
 self$vmWriter$writeArithmetic("not")
 self$vmWriter$writeIf(whileEndLabel)
 
-## '{'
+// '{'
 self$requireSymbol('{')
-## statements
+// statements
 self$compileStatement()
-## '}'
+// '}'
 self$requireSymbol('}')
 
-## if (condition) go to top label
+// if (condition) go to top label
 self$vmWriter$writeGoto(whileExpLabel)
-## or continue
+// or continue
 self$vmWriter$writeLabel(whileEndLabel)
 
-# self$labelIndex <- self$labelIndex + 1
+// self$labelIndex <- self$labelIndex + 1
 },
-# compileWhile = function() {
-#     continueLabel <- self$newLabel()
-#     topLabel <- self$newLabel()
 
-#     ## top label for while loop
-#     self$vmWriter$writeLabel(topLabel)
-
-#     ## '('
-#     self$requireSymbol('(')
-#     ## expression while condition: true or false
-#     self$compileExpression()
-#     ## ')'
-#     self$requireSymbol(')')
-#     ## if ~(condition) go to continue label
-#     self$vmWriter$writeArithmetic("not")
-#     self$vmWriter$writeIf(continueLabel)
-#     ## '{'
-#     self$requireSymbol('{')
-#     ## statements
-#     self$compileStatement()
-#     ## '}'
-#     self$requireSymbol('}')
-#     ## if (condition) go to top label
-#     self$vmWriter$writeGoto(topLabel)
-#     ## or continue
-#     self$vmWriter$writeLabel(continueLabel)
-# },
-
-## Returns a new label name, using the labelIndex.
-# newLabel = function() {
-#     label <- paste("LABEL_", self$labelIndex, sep="")
-#     self$labelIndex <- self$labelIndex + 1
-#     return(label)
-# },
 
 ## Compiles a return statement.
 ## ‘return’ expression? ';'

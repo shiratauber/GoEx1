@@ -125,15 +125,15 @@ func New(inputFile *os.File) JackTokenizer {
 }
 
 // Do we have more tokens in the input?
-func hasMoreTokens(mofa JackTokenizer) bool {
+func HasMoreTokens(mofa *JackTokenizer) bool {
 	return mofa.pointer < (len(mofa.tokens) + 1)
 }
 
-/* Gets the next token from the input and makes it the current token.
-This method should only be called if hasMoreTokens() is true.
-Initially there is no current token.*/
-func Advance(mofa JackTokenizer) {
-	if hasMoreTokens(mofa) {
+// Gets the next token from the input and makes it the current token.
+// This method should only be called if hasMoreTokens() is true.
+// Initially there is no current token.
+func Advance(mofa *JackTokenizer) {
+	if HasMoreTokens(mofa) {
 		mofa.currentToken = mofa.tokens[mofa.pointer]
 		//   print(paste("DEBUG :", self$currentToken))
 		mofa.pointer = mofa.pointer + 1
@@ -202,7 +202,7 @@ func Identifier(mofa JackTokenizer) string {
 
 // Returns the integer value of the current token.
 // Should be called only when TokenType() is INT_CONST.
-func intVal(mofa JackTokenizer) string {
+func IntVal(mofa JackTokenizer) string {
 	if mofa.currentTokenType == "INT_CONST" {
 		return mofa.currentToken
 	} else {
@@ -213,7 +213,7 @@ func intVal(mofa JackTokenizer) string {
 
 // Returns the string value of the current token without the double quotes.
 // Should be called only when TokenType() is STRING_CONST.
-func stringVal(mofa JackTokenizer) string {
+func StringVal(mofa JackTokenizer) string {
 	if mofa.currentTokenType == "STRING_CONST" {
 		size := len(mofa.currentToken)
 		return mofa.currentToken[1 : size-1]
@@ -224,7 +224,7 @@ func stringVal(mofa JackTokenizer) string {
 }
 
 //  Moves pointer back.
-func pointerBack(mofa JackTokenizer) {
+func PointerBack(mofa *JackTokenizer) {
 	if mofa.pointer > 1 {
 		mofa.pointer = mofa.pointer - 1
 		mofa.currentToken = mofa.tokens[mofa.pointer]
@@ -233,7 +233,7 @@ func pointerBack(mofa JackTokenizer) {
 
 //////////////////////////////////////////////////////////////////////////////
 // Returns if current Symbol is an op.
-func isOp(a string) bool {
+func IsOp(a string) bool {
 	//return (symbol in {'+', '-', '*', '/', '&', '|', '<', '>', '='})
 	var l []byte
 	l = append(l, '+', '-', '*', '/', '&', '|', '<', '>', '=')
