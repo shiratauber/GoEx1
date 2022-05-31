@@ -1,7 +1,6 @@
-package CompilationEnginesource
+package CompilationEngine
 
 import (
-	"GoEx1/Symbol"
 	"GoEx1/jackTokenizer"
 	"GoEx1/VMWriter"
 	"GoEx1/SymbolTable"
@@ -223,123 +222,118 @@ func WriteFunctionDec(keyword string, c *CompilationEngine) {
 	}
 
 }
+func CompileStatement(c *CompilationEngine) {
+	// determine whether there is a statement next can be a '}'
+	jackTokenizer.Advance(&c.tokenizer)
+	// next is a '}'
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "}"{
+		jackTokenizer.PointerBack(&c.tokenizer)
+		return
+	}
+	// next is 'let'|'if'|'while'|'do'|'return'
+	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" {
+		print("Expected keyword")
+	} else {
+		switch jackTokenizer.KeyWord(c.tokenizer) {
+		case "LET":
+			{
+				CompileLet()
+				break
+			}
+		case "IF":
+			{
+				CompileIf()
+				break
+			}
+		case "WHILE":
+			{
+				CompileWhile()
+				break
+			}
+		case "DO" :
+			{
+				CompileDo()
+				break
+			}
+		case "RETURN":
+			{
+				CompileReturn()
+				break
+			}
+		default:
+			{ //   default
+				print("Expected let or if or while or do or return")
+			}
+		}
+	}
 
-// Compiles a single statement.
-compileStatement = function() {
-// determine whether there is a statement next can be a '}'
-self$tokenizer$advance()
-
-// next is a '}'
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '}'){
-self$tokenizer$pointerBack()
-return()
+	CompileStatement(c)
 }
-
-// next is 'let'|'if'|'while'|'do'|'return'
-if (self$tokenizer$tokenType() != "KEYWORD") {
-self$throwException("Expected keyword")
-} else {
-switch(self$tokenizer$keyWord(),
-"LET"={
-self$compileLet()
-},
-"IF"={
-self$compileIf()
-},
-"WHILE"={
-self$compileWhile()
-},
-"DO"={
-self$compileDo()
-},
-"RETURN"={
-self$compileReturn()
-},
-{   //   default
-self$throwException("Expected let or if or while or do or return")
-}
-)
-}
-
-self$compileStatement()
-},
-
 // Compiles a (possibly empty) parameter list,
 // not including the enclosing "()".
 // ((type varName)(',' type varName)*)?
-compileParameterList = function() {
-// Check if there is parameterList, if next token is ')' than go back
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == ')'){
-self$tokenizer$pointerBack()
-return()
+func CompileParameterList(c *CompilationEngine) {
+	// Check if there is parameterList, if next token is ')' than go back
+	jackTokenizer.Advance(&c.tokenizer)
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == ")"{
+		jackTokenizer.PointerBack(&c.tokenizer)
+		return
+	}
+	// there is parameter, at least one varName
+	jackTokenizer.PointerBack(&c.tokenizer)
+	for true{
+		// typeTok
+		typeTok  := CompileType()
+		// varName
+		jackTokenizer.Advance(&c.tokenizer)
+		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+			print("Expected identifier")
+		}
+		SymbolTable.Define(jackTokenizer.Identifier(c.tokenizer), typeTok , "ARG", &c.symbolTable)
+		// ',' or ')'
+		jackTokenizer.Advance(&c.tokenizer)
+		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !(jackTokenizer.Symbol(c.tokenizer) == "," ||
+			jackTokenizer.Symbol(c.tokenizer) == ")") {
+			print("Expected , or )")
+		}
+		if jackTokenizer.Symbol(c.tokenizer) == ")" {
+			jackTokenizer.PointerBack(&c.tokenizer)
+			break
+		}
+	}
 }
 
-// there is parameter, at least one varName
-self$tokenizer$pointerBack()
-repeat{
-// typeTok
-typeTok  <- self$compileType()
 
-// varName
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() != "IDENTIFIER") {
-self$throwException("Expected identifier")
-}
-
-self$symbolTable$define(self$tokenizer$identifier(), typeTok , "ARG")
-
-// ',' or ')'
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c(",", ")"))) {
-self$throwException("Expected , or )")
-}
-
-if (self$tokenizer$symbol() == ')') {
-self$tokenizer$pointerBack()
-break
-}
-}
+func CompileVarDec(c *CompilationEngine) {
+	// determine if there is a varDec
+	jackTokenizer.Advance(&c.tokenizer)
+	// no 'var' go back
+	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || jackTokenizer.KeyWord(c.tokenizer) != "VAR"{
+		jackTokenizer.PointerBack(&c.tokenizer)
+		return
+	}
+	// typeTok
+	typeTok  <- self$compileType()
+	repeat{
+		// varName
+		self$tokenizer$advance()
+		if (self$tokenizer$tokenType() != "IDENTIFIER") {
+		self$throwException("Expected identifier")
+		}
+		self$symbolTable$define(self$tokenizer$identifier(), typeTok , "VAR")
+		// ',' or ';'
+		self$tokenizer$advance()
+		if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c(",", ";"))) {
+		self$throwException("Expected , or ;")
+		}
+		if (self$tokenizer$symbol() == ';') {
+		break
+	}
+	}
+	self$compileVarDec()
 },
 
-// Compiles a var declaration.
-// 'var' type varName (',' varName)*;
-compileVarDec = function() {
-// determine if there is a varDec
-self$tokenizer$advance()
-// no 'var' go back
-if (self$tokenizer$tokenType() != "KEYWORD" | self$tokenizer$keyWord() != "VAR"){
-self$tokenizer$pointerBack()
-return()
-}
 
-// typeTok
-typeTok  <- self$compileType()
-
-repeat{
-// varName
-self$tokenizer$advance()
-
-if (self$tokenizer$tokenType() != "IDENTIFIER") {
-self$throwException("Expected identifier")
-}
-
-self$symbolTable$define(self$tokenizer$identifier(), typeTok , "VAR")
-
-// ',' or ';'
-self$tokenizer$advance()
-
-if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c(",", ";"))) {
-self$throwException("Expected , or ;")
-}
-
-if (self$tokenizer$symbol() == ';') {
-break
-}
-}
-
-self$compileVarDec()
-},
 
 //compileStatements = function() {},
 
@@ -869,10 +863,6 @@ func CompileType(c *CompilationEngine) string {
 	print("Expected int or char or boolean or className")
 	return ""
 }
-
-
-
-
 
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
