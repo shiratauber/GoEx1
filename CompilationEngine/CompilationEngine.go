@@ -510,7 +510,7 @@ func compileWhile(c *CompilationEngine) {
 	// '('
 	RequireSymbol("(", c)
 	// expression while condition: true or false
-	CompileExpression()
+	CompileExpression(c)
 	// ')'
 	RequireSymbol(")", c)
 
@@ -521,7 +521,7 @@ func compileWhile(c *CompilationEngine) {
 	// '{'
 	RequireSymbol("{", c)
 	// statements
-	CompileStatement()
+	CompileStatement(c)
 	// '}'
 	RequireSymbol("}", c)
 
@@ -566,7 +566,7 @@ func compileIf(c *CompilationEngine) {
 	// '('
 	RequireSymbol("(",c)
 	// expression
-	CompileExpression()
+	CompileExpression(c)
 	// ')'
 	RequireSymbol(")",c)
 
@@ -577,7 +577,7 @@ func compileIf(c *CompilationEngine) {
 	// '{'
 	RequireSymbol("{", c)
 	// statements
-	CompileStatement()
+	CompileStatement(c)
 	// '}'
 	RequireSymbol("}",c)
 
@@ -585,119 +585,92 @@ func compileIf(c *CompilationEngine) {
 	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.KeyWord(c.tokenizer) == "ELSE" {
 	// ifEndLabel <- paste("IF_END", self$labelIndex, sep="")
-	self$vmWriter$writeGoto(ifEndLabel)
-	self$vmWriter$writeLabel(ifFalseLabel)
+	VMWriter.WriteGoto(ifEndLabel,c.vmWriter)
+	VMWriter.WriteLabel(ifFalseLabel,c.vmWriter)
 
 	// '{'
-	self$requireSymbol('{')
+	RequireSymbol("{",c)
 	// statements
-	self$compileStatement()
+	CompileStatement(c)
 	// '}'
-	self$requireSymbol('}')
+	RequireSymbol("}",c)
 
-	self$vmWriter$writeLabel(ifEndLabel)
-	}else {   ##   only if
-	self$tokenizer$pointerBack()
-	self$vmWriter$writeLabel(ifFalseLabel)
+	VMWriter.WriteLabel(ifEndLabel,c.vmWriter)
+	}else {   //   only if
+	jackTokenizer.PointerBack(&c.tokenizer)
+	VMWriter.WriteLabel(ifFalseLabel,c.vmWriter)
 	}
 
-	# self$labelIndex <- self$labelIndex + 1
-},
-# compileIf = function() {
-#     elseLabel <- self$newLabel()
-#     endLabel <- self$newLabel()
-
-#     ## '('
-#     self$requireSymbol('(')
-#     ## expression
-#     self$compileExpression()
-#     ## ')'
-#     self$requireSymbol(')')
-#     ## if ~(condition) go to else label
-#     self$vmWriter$writeArithmetic("not")
-#     self$vmWriter$writeIf(elseLabel)
-#     ## '{'
-#     self$requireSymbol('{')
-#     ## statements
-#     self$compileStatement()
-#     ## '}'
-#     self$requireSymbol('}')
-#     ## if condition after statement finishing, go to end label
-#     self$vmWriter$writeGoto(endLabel)
-
-#     self$vmWriter$writeLabel(elseLabel)
-#     ## check if there is 'else'
-#     self$tokenizer$advance()
-#     if (self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() == "ELSE") {
-#         ## '{'
-#         self$requireSymbol('{')
-#         ## statements
-#         self$compileStatement()
-#         ## '}'
-#         self$requireSymbol('}')
-#     }else {
-#         self$tokenizer$pointerBack()
-#     }
-
-#     self$vmWriter$writeLabel(endLabel)
-# },
-
-## Compiles an expression
-## term (op term)*
-compileExpression = function() {
-## term
-self$compileTerm()
-## (op term)*
-repeat{
-self$tokenizer$advance()
-## op
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$isOp()) {
-
-opCommand <- ""
-
-switch(self$tokenizer$symbol(),
-'+'={
-opCommand <- "add"
-},
-'-'={
-opCommand <- "sub"
-},
-'*'={
-opCommand <- "call Math.multiply 2"
-},
-'/'={
-opCommand <- "call Math.divide 2"
-},
-'<'={
-opCommand <- "lt"
-},
-'>'={
-opCommand <- "gt"
-},
-'='={
-opCommand <- "eq"
-},
-'&'={
-opCommand <- "and"
-},
-'|'={
-opCommand <- "or"
-},
-{
-self$throwException("Unknown op")
-})
-
-## term
-self$compileTerm()
-
-self$vmWriter$writeCommand(opCommand)
-
-}else {
-self$tokenizer$pointerBack()
-break
 }
+
+
+// Compiles an expression
+// term (op term)*
+func CompileExpression(c *CompilationEngine) {
+
+		//term
+		CompileTerm(c)
+		// (op term)*
+		for true {
+			jackTokenizer.Advance(&c.tokenizer)
+			// op
+			if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.IsOp(jackTokenizer.Symbol(c.tokenizer)) {
+
+				var opCommand = ""
+				switch jackTokenizer.Symbol(c.tokenizer) {
+				case "+":
+					{
+						opCommand = "add"
+					}
+				case "-":
+					{
+						opCommand = "sub"
+					}
+				case "*":
+					{
+						opCommand = "call Math.multiply 2"
+					}
+				case "/":
+					{
+						opCommand = "call Math.divide 2"
+					}
+				case "<":
+					{
+						opCommand = "lt"
+					}
+				case ">":
+					{
+						opCommand = "gt"
+					}
+				case "&":
+					{
+						opCommand = "and"
+					}
+				case "=":
+					{
+						opCommand = "eq"
+					}
+				case "|":
+					{
+						opCommand = "or"
+					}
+				default:
+					print("UnknownOp")
+
+				}
+
+				// term
+				CompileTerm(c)
+
+				VMWriter.WriteCommand(opCommand, c.vmWriter)
+			} else {
+				jackTokenizer.PointerBack(&c.tokenizer)
+				break
+			}
+
+		}
 }
-},
+
 
 /*## Compiles a term. This routine is faced with a
 ## slight difficulty when trying to decide
