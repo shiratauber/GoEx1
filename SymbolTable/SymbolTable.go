@@ -47,7 +47,7 @@ func VarCount(kind string, s *SymbolTable) int {
 
 //Returns the kind of the named identifier in the current scope.
 //If the identifier is unknown in the current scope returns NONE.
-func kindOf(name string, s *SymbolTable) string {
+func KindOf(name string, s *SymbolTable) string {
 	var sym = lookUp(name, s)
 	if sym.Sindex == -1 {
 		return "NONE"
@@ -58,7 +58,7 @@ func kindOf(name string, s *SymbolTable) string {
 
 // Returns the type of the named identifier in the current scope.
 
-func typeOf(name string, s *SymbolTable) string {
+func TypeOf(name string, s *SymbolTable) string {
 	var sym = lookUp(name, s)
 	if sym.Sindex == -1 {
 		return ""
@@ -67,7 +67,7 @@ func typeOf(name string, s *SymbolTable) string {
 	}
 }
 
-func indexOf(name string, s *SymbolTable) int {
+func IndexOf(name string, s *SymbolTable) int {
 	var sym = lookUp(name, s)
 	if sym.Sindex == -1 {
 		return -1

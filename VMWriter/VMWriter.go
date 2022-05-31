@@ -56,6 +56,14 @@ func WriteLabel(label string, c Writer) {
 
 }
 
+// Writes a VM arithmetic command.
+func WriteArithmetic(command string, c Writer) {
+	var s string = command + "\n"
+	if _, err := c.OutputFile.WriteString(s); err != nil {
+		panic(err)
+	}
+}
+
 func WriteGoto(label string, c Writer) {
 	var s string = "goto " + label + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {

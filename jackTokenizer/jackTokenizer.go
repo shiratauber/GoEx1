@@ -1,13 +1,15 @@
 package jackTokenizer
 
 import (
+	"GoEx1/Analyzer"
 	"bufio"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type JackTokenizer struct {
-	currentToken     string
+	CurrentToken     string
 	currentTokenType string
 	pointer          int
 	tokens           []string //  List<String
@@ -116,7 +118,7 @@ func New(inputFile *os.File) JackTokenizer {
 		}
 	}
 	mofa.pointer = 1
-	mofa.currentToken = ""
+	mofa.CurrentToken = ""
 	mofa.currentTokenType = "NONE"
 	mofa.tokens = strings.Split(mofa.tokensString, "\n")
 
@@ -134,7 +136,7 @@ func HasMoreTokens(mofa *JackTokenizer) bool {
 // Initially there is no current token.
 func Advance(mofa *JackTokenizer) {
 	if HasMoreTokens(mofa) {
-		mofa.currentToken = mofa.tokens[mofa.pointer]
+		mofa.CurrentToken = mofa.tokens[mofa.pointer]
 		//   print(paste("DEBUG :", self$currentToken))
 		mofa.pointer = mofa.pointer + 1
 	} else {
@@ -143,9 +145,9 @@ func Advance(mofa *JackTokenizer) {
 		return
 	}
 
-	if WordIsKeyWord(mofa.currentToken) {
+	if WordIsKeyWord(mofa.CurrentToken) {
 		mofa.currentTokenType = "KEYWORD"
-	} else if TabIsSymbol(mofa.currentToken) {
+	} else if TabIsSymbol(mofa.CurrentToken) {
 		mofa.currentTokenType = "SYMBOL"
 	} else if TabIsDigitsRegex(mofa.tokensString) {
 		mofa.currentTokenType = "INT_CONST"
@@ -170,7 +172,7 @@ func TokenType(mofa JackTokenizer) string {
 // Should be called only when tokeyType() is KEYWORD.
 func KeyWord(mofa JackTokenizer) string {
 	if mofa.currentTokenType == "KEYWORD" {
-		return strings.ToUpper(mofa.currentToken)
+		return strings.ToUpper(mofa.CurrentToken)
 	} else {
 		//   print("Current token is not a keyword!")
 		return ""
@@ -182,7 +184,7 @@ func KeyWord(mofa JackTokenizer) string {
 func Symbol(mofa JackTokenizer) string {
 	if mofa.currentTokenType == "SYMBOL" {
 		//    return(substr(self$currentToken, 1, 1))      ## currentToken[0]
-		return mofa.currentToken
+		return mofa.CurrentToken
 	} else {
 		//    print("Current token is not a symbol!")
 		return ""
@@ -193,7 +195,7 @@ func Symbol(mofa JackTokenizer) string {
 // Should be called only when TokenType() is IDENTIFIER.
 func Identifier(mofa JackTokenizer) string {
 	if mofa.currentTokenType == "IDENTIFIER" {
-		return mofa.currentToken
+		return mofa.CurrentToken
 	} else {
 		//    print("Current token is not an identifier!")
 		return ""
@@ -202,12 +204,14 @@ func Identifier(mofa JackTokenizer) string {
 
 // Returns the integer value of the current token.
 // Should be called only when TokenType() is INT_CONST.
-func IntVal(mofa JackTokenizer) string {
+func IntVal(mofa JackTokenizer) int {
 	if mofa.currentTokenType == "INT_CONST" {
-		return mofa.currentToken
+		var intVar, err = strconv.Atoi(mofa.CurrentToken)
+		Analyzer.Check(err)
+		return intVar
 	} else {
 		//   print("Current token is not an integer constant!")
-		return ""
+		return -1
 	}
 }
 
@@ -215,8 +219,8 @@ func IntVal(mofa JackTokenizer) string {
 // Should be called only when TokenType() is STRING_CONST.
 func StringVal(mofa JackTokenizer) string {
 	if mofa.currentTokenType == "STRING_CONST" {
-		size := len(mofa.currentToken)
-		return mofa.currentToken[1 : size-1]
+		size := len(mofa.CurrentToken)
+		return mofa.CurrentToken[1 : size-1]
 	} else {
 		//    print("Current token is not a string constant!")
 		return ""
@@ -227,7 +231,7 @@ func StringVal(mofa JackTokenizer) string {
 func PointerBack(mofa *JackTokenizer) {
 	if mofa.pointer > 1 {
 		mofa.pointer = mofa.pointer - 1
-		mofa.currentToken = mofa.tokens[mofa.pointer]
+		mofa.CurrentToken = mofa.tokens[mofa.pointer]
 	}
 }
 
