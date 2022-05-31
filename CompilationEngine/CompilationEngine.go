@@ -101,7 +101,7 @@ func CompileClassVarDec(c *CompilationEngine) {
 	}
 
 	kind := jackTokenizer.KeyWord(c.tokenizer)
-	typeTok := CompileType()
+	typeTok := CompileType(c)
 
 	for true{
 			// varName
@@ -162,7 +162,7 @@ func CompileSubroutine(c *CompilationEngine) {
 	typeTok  = "void"
 	} else {
 		jackTokenizer.PointerBack(&c.tokenizer)
-	typeTok  = CompileType()
+	typeTok  = CompileType(c)
 	}
 
 	// subroutineName which is a identifier
@@ -177,7 +177,7 @@ func CompileSubroutine(c *CompilationEngine) {
 	RequireSymbol("(", c)
 
 	// parameterList
-	CompileParameterList()
+	CompileParameterList(c)
 
 	// ')'
 	RequireSymbol(")", c)
@@ -195,18 +195,18 @@ func CompileSubroutineBody(keyword string, c *CompilationEngine) {
 	// '{'
 	RequireSymbol("{", c)
 	// varDec*
-	CompileVarDec()
+	CompileVarDec(c)
 	// write VM function declaration
 	WriteFunctionDec(keyword, c)
 	// statements
-	CompileStatement()
+	CompileStatement(c)
 	// '}'
 	RequireSymbol("}", c)
 }
 
 // Writes function declaration, load pointer when keyword is METHOD or CONSTRUCTOR.
 func WriteFunctionDec(keyword string, c *CompilationEngine) {
-	VMWriter.WriteFunction(CurrentFunction(), SymbolTable.VarCount("VAR", &c.symbolTable), c.vmWriter)
+	VMWriter.WriteFunction(CurrentFunction(c), SymbolTable.VarCount("VAR", &c.symbolTable), c.vmWriter)
 
 	// METHOD and CONSTRUCTOR need to load this pointer
 	if keyword == "METHOD" {
@@ -252,12 +252,12 @@ func CompileStatement(c *CompilationEngine) {
 			}
 		case "DO" :
 			{
-				CompileDo()
+				CompileDo(c)
 				break
 			}
 		case "RETURN":
 			{
-				CompileReturn()
+				CompileReturn(c)
 				break
 			}
 		default:
@@ -283,7 +283,7 @@ func CompileParameterList(c *CompilationEngine) {
 	jackTokenizer.PointerBack(&c.tokenizer)
 	for true{
 		// typeTok
-		typeTok  := CompileType()
+		typeTok  := CompileType(c)
 		// varName
 		jackTokenizer.Advance(&c.tokenizer)
 		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
@@ -313,25 +313,26 @@ func CompileVarDec(c *CompilationEngine) {
 		return
 	}
 	// typeTok
-	typeTok  <- self$compileType()
-	repeat{
+	typeTok  := CompileType(c)
+	for true{
 		// varName
-		self$tokenizer$advance()
-		if (self$tokenizer$tokenType() != "IDENTIFIER") {
-		self$throwException("Expected identifier")
+		jackTokenizer.Advance(&c.tokenizer)
+		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+			print("Expected identifier")
 		}
-		self$symbolTable$define(self$tokenizer$identifier(), typeTok , "VAR")
+		SymbolTable.Define(jackTokenizer.Identifier(c.tokenizer), typeTok , "VAR", &c.symbolTable)
 		// ',' or ';'
-		self$tokenizer$advance()
-		if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c(",", ";"))) {
-		self$throwException("Expected , or ;")
+		jackTokenizer.Advance(&c.tokenizer)
+		arr := []string{",", ";"}
+		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !StringInSlice(jackTokenizer.Symbol(c.tokenizer),arr) {
+			print("Expected , or ;")
 		}
-		if (self$tokenizer$symbol() == ';') {
-		break
+		if jackTokenizer.Symbol(c.tokenizer) == ";" {
+			break
+		}
 	}
-	}
-	self$compileVarDec()
-},
+	CompileVarDec(c)
+}
 
 
 
@@ -339,80 +340,81 @@ func CompileVarDec(c *CompilationEngine) {
 
 // Compiles a do statement.
 // 'do' subroutineCall ';'
-compileDo = function() {
-// subroutineCall
-self$compileSubroutineCall()
-// ';'
-self$requireSymbol(';')
-// pop return value
-self$vmWriter$writePop("temp", 0)
-},
+func CompileDo(c *CompilationEngine) {
+	// subroutineCall
+	CompileSubroutineCall(c)
+	// ';'
+	RequireSymbol(";", c)
+	// pop return value
+	VMWriter.WritePop("temp", 0, c.vmWriter)
+}
 
 // Compiles a subroutine call.
 // subroutineName '(' expressionList ')' | (className|varName) '.' subroutineName '(' expressionList ')'
-compileSubroutineCall = function() {
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() != "IDENTIFIER"){
-self$throwException("Expected identifier")
+func CompileSubroutineCall(c *CompilationEngine) {
+	jackTokenizer.Advance(&c.tokenizer)
+	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER"{
+		print("Expected identifier")
+	}
+
+	name := jackTokenizer.Identifier(c.tokenizer)
+	nArgs := 0
+
+	jackTokenizer.Advance(&c.tokenizer)
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "(" {
+		// push this pointer
+		VMWriter.WritePush("pointer", 0, c.vmWriter)
+		// '(' expressionList ')'
+		// expressionList
+		nArgs = CompileExpressionList(c) + 1
+		// ')'
+		RequireSymbol(")", c)
+		// call subroutine
+		VMWriter.WriteCall(c.currentClass+ "."+ name, nArgs, c.vmWriter)
+	} else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "." {
+		// (className|varName) '.' subroutineName '(' expressionList ')'
+
+		objName := name
+		// subroutineName
+		jackTokenizer.Advance(&c.tokenizer)
+
+		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER"{
+			print("Expected identifier")
+		}
+
+		name = jackTokenizer.Identifier(c.tokenizer)
+
+		// check for if it is built-in typeTok
+		typeTok  := SymbolTable.TypeOf(objName, &c.symbolTable)
+
+		arr := []string{"int", "boolean", "char", "void"}
+		if StringInSlice(typeTok, arr) {
+			print("No built-in type")
+		} else if typeTok  == "" {
+			name = objName+ "."+ name
+		} else {
+			nArgs = 1
+			// push variable directly onto stack
+			VMWriter.WritePush(getSeg(SymbolTable.KindOf(objName, &c.symbolTable)), SymbolTable.IndexOf(objName, &c.symbolTable), c.vmWriter)
+			name = SymbolTable.TypeOf(objName, &c.symbolTable)+ "."+ name
+		}
+
+		// '('
+		RequireSymbol("(", c)
+		// expressionList
+		nArgs = nArgs + CompileExpressionList(c)
+		// ')'
+		RequireSymbol(")", c)
+		// call subroutine
+		VMWriter.WriteCall(name, nArgs, c.vmWriter)
+
+	} else {
+		print("Expected ( or .")
+	}
 }
 
-name <- self$tokenizer$identifier()
-nArgs <- 0
-
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '(') {
-// push this pointer
-self$vmWriter$writePush("pointer", 0)
-// '(' expressionList ')'
-// expressionList
-nArgs <- self$compileExpressionList() + 1
-// ')'
-self$requireSymbol(')')
-// call subroutine
-self$vmWriter$writeCall(paste(self$currentClass, '.', name, sep=""), nArgs)
-} else if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '.') {
-// (className|varName) '.' subroutineName '(' expressionList ')'
-
-objName <- name
-// subroutineName
-self$tokenizer$advance()
-
-if (self$tokenizer$tokenType() != "IDENTIFIER"){
-self$throwException("Expected identifier")
-}
-
-name <- self$tokenizer$identifier()
-
-// check for if it is built-in typeTok
-typeTok  <- self$symbolTable$typeOf(objName)
-
-if (typeTok  %in% c("int", "boolean", "char", "void")) {
-self$throwException("No built-in type")
-} else if (typeTok  == "") {
-name <- paste(objName, ".", name, sep="")
-} else {
-nArgs <- 1
-// push variable directly onto stack
-self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(objName)), self$symbolTable$indexOf(objName))
-name <- paste(self$symbolTable$typeOf(objName), ".", name, sep="")
-}
-
-// '('
-self$requireSymbol('(')
-// expressionList
-nArgs <- nArgs + self$compileExpressionList()
- ')'
-self$requireSymbol(')')
- call subroutine
-self$vmWriter$writeCall(name, nArgs)
-
-} else {
-self$throwException("Expected ( or .")
-}
-},
-
- Compiles a let statement
- 'let' varName ('[' ']')? '=' expression ';'
+// Compiles a let statement
+// 'let' varName ('[' ']')? '=' expression ';'
 compileLet = function() {   // let diff = y - x;
 // varName
 self$tokenizer$advance()
