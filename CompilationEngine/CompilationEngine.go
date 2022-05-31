@@ -6,6 +6,7 @@ import (
 	"GoEx1/VMWriter"
 	"GoEx1/SymbolTable"
 		"os"
+	"strconv"
 	"strings"
 )
 type CompilationEngine struct {
@@ -501,148 +502,112 @@ func getSeg(kind string) string{
 		return "NONE"
 	}
 }
-)
-},
 
 // Compiles a while statement.
 // 'while' '(' expression ')' '{' statements '}'
-compileWhile = function() {
-whileExpLabel <- paste("WHILE_EXP", self$labelCounterWhile, sep="")
-whileEndLabel <- paste("WHILE_END", self$labelCounterWhile, sep="")
-self$labelCounterWhile <- self$labelCounterWhile + 1
+func compileWhile(c *CompilationEngine) {
+	whileExpLabel := "WHILE_EXP"+ string(c.labelCounterWhile)
+	whileEndLabel := "WHILE_END"+ string(c.labelCounterWhile)
+	c.labelCounterWhile = c.labelCounterWhile + 1
 
-// top label for while loop
-self$vmWriter$writeLabel(whileExpLabel)
+	// top label for while loop
+	VMWriter.WriteLabel(whileExpLabel, c.vmWriter)
 
-// '('
-self$requireSymbol('(')
-// expression while condition: true or false
-self$compileExpression()
-// ')'
-self$requireSymbol(')')
+	// '('
+	RequireSymbol("(", c)
+	// expression while condition: true or false
+	CompileExpression()
+	// ')'
+	RequireSymbol(")", c)
 
-// if ~(condition) go to continue label
-self$vmWriter$writeArithmetic("not")
-self$vmWriter$writeIf(whileEndLabel)
+	// if ~(condition) go to continue label
+	VMWriter.WriteArithmetic("not", c.vmWriter)
+	VMWriter.WriteIf(whileEndLabel, c.vmWriter)
 
-// '{'
-self$requireSymbol('{')
-// statements
-self$compileStatement()
-// '}'
-self$requireSymbol('}')
+	// '{'
+	RequireSymbol("{", c)
+	// statements
+	CompileStatement()
+	// '}'
+	RequireSymbol("}", c)
 
-## if (condition) go to top label
-self$vmWriter$writeGoto(whileExpLabel)
-## or continue
-self$vmWriter$writeLabel(whileEndLabel)
+	// if (condition) go to top label
+	VMWriter.WriteGoto(whileExpLabel, c.vmWriter)
+	// or continue
+	VMWriter.WriteLabel(whileEndLabel, c.vmWriter)
 
-# self$labelIndex <- self$labelIndex + 1
-},
-# compileWhile = function() {
-#     continueLabel <- self$newLabel()
-#     topLabel <- self$newLabel()
-
-#     ## top label for while loop
-#     self$vmWriter$writeLabel(topLabel)
-
-#     ## '('
-#     self$requireSymbol('(')
-#     ## expression while condition: true or false
-#     self$compileExpression()
-#     ## ')'
-#     self$requireSymbol(')')
-#     ## if ~(condition) go to continue label
-#     self$vmWriter$writeArithmetic("not")
-#     self$vmWriter$writeIf(continueLabel)
-#     ## '{'
-#     self$requireSymbol('{')
-#     ## statements
-#     self$compileStatement()
-#     ## '}'
-#     self$requireSymbol('}')
-#     ## if (condition) go to top label
-#     self$vmWriter$writeGoto(topLabel)
-#     ## or continue
-#     self$vmWriter$writeLabel(continueLabel)
-# },
-
-## Returns a new label name, using the labelIndex.
-# newLabel = function() {
-#     label <- paste("LABEL_", self$labelIndex, sep="")
-#     self$labelIndex <- self$labelIndex + 1
-#     return(label)
-# },
-
-## Compiles a return statement.
-## ‘return’ expression? ';'
-compileReturn = function() {
-## check if there is any expression
-self$tokenizer$advance()
-
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == ';') {
-## no expression push 0 to stack
-self$vmWriter$writePush("constant", 0)
-}else {
-## expression exist
-self$tokenizer$pointerBack()
-## expression
-self$compileExpression()
-## ';'
-self$requireSymbol(';')
+	// self$labelIndex <- self$labelIndex + 1
 }
 
-self$vmWriter$writeReturn()
-},
+// Compiles a return statement.
+// ‘return’ expression? ';'
+func CompileReturn(c *CompilationEngine) {
+	// check if there is any expression
+	jackTokenizer.Advance(&c.tokenizer)
 
-## Compiles an if statement,
-## possibly with a trailing else clause.
-# 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
-compileIf = function() {
-ifTrueLabel <- paste("IF_TRUE", self$labelCounterIf, sep="")
-ifFalseLabel <- paste("IF_FALSE", self$labelCounterIf, sep="")
-ifEndLabel <- paste("IF_END", self$labelCounterIf, sep="")
-self$labelCounterIf <- self$labelCounterIf + 1
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == ";" {
+		// no expression push 0 to stack
+		VMWriter.WritePush("constant", 0, c.vmWriter)
+	}else {
+		// expression exist
+		jackTokenizer.PointerBack(&c.tokenizer)
+		// expression
+		CompileExpression()
+		// ';'
+		RequireSymbol(";", c)
+	}
 
-## '('
-self$requireSymbol('(')
-## expression
-self$compileExpression()
-## ')'
-self$requireSymbol(')')
-
-self$vmWriter$writeIf(ifTrueLabel)
-self$vmWriter$writeGoto(ifFalseLabel)
-self$vmWriter$writeLabel(ifTrueLabel)
-
-## '{'
-self$requireSymbol('{')
-## statements
-self$compileStatement()
-## '}'
-self$requireSymbol('}')
-
-## check if there is 'else'
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() == "ELSE") {
-# ifEndLabel <- paste("IF_END", self$labelIndex, sep="")
-self$vmWriter$writeGoto(ifEndLabel)
-self$vmWriter$writeLabel(ifFalseLabel)
-
-## '{'
-self$requireSymbol('{')
-## statements
-self$compileStatement()
-## '}'
-self$requireSymbol('}')
-
-self$vmWriter$writeLabel(ifEndLabel)
-}else {   ##   only if
-self$tokenizer$pointerBack()
-self$vmWriter$writeLabel(ifFalseLabel)
+	VMWriter.WriteReturn(c.vmWriter)
 }
 
-# self$labelIndex <- self$labelIndex + 1
+// Compiles an if statement,
+// possibly with a trailing else clause.
+// 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
+func compileIf(c *CompilationEngine) {
+	ifTrueLabel := "IF_TRUE"+ string(c.labelCounterIf)
+	ifFalseLabel := "IF_FALSE"+ string(c.labelCounterIf)
+	ifEndLabel := "IF_END"+ string(c.labelCounterIf)
+	c.labelCounterIf = c.labelCounterIf + 1
+
+	// '('
+	RequireSymbol("(",c)
+	// expression
+	CompileExpression()
+	// ')'
+	RequireSymbol(")",c)
+
+	VMWriter.WriteIf(ifTrueLabel,c.vmWriter)
+	VMWriter.WriteGoto(ifFalseLabel, c.vmWriter)
+	VMWriter.WriteLabel(ifTrueLabel, c.vmWriter)
+
+	// '{'
+	RequireSymbol("{", c)
+	// statements
+	CompileStatement()
+	// '}'
+	RequireSymbol("}",c)
+
+	// check if there is 'else'
+	jackTokenizer.Advance(&c.tokenizer)
+	if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.KeyWord(c.tokenizer) == "ELSE" {
+	// ifEndLabel <- paste("IF_END", self$labelIndex, sep="")
+	self$vmWriter$writeGoto(ifEndLabel)
+	self$vmWriter$writeLabel(ifFalseLabel)
+
+	// '{'
+	self$requireSymbol('{')
+	// statements
+	self$compileStatement()
+	// '}'
+	self$requireSymbol('}')
+
+	self$vmWriter$writeLabel(ifEndLabel)
+	}else {   ##   only if
+	self$tokenizer$pointerBack()
+	self$vmWriter$writeLabel(ifFalseLabel)
+	}
+
+	# self$labelIndex <- self$labelIndex + 1
 },
 # compileIf = function() {
 #     elseLabel <- self$newLabel()
@@ -752,7 +717,7 @@ break
 ## possibilities. Any other token is not part of
 ## this term and should not be advanced over.
 ## integerConstant|stringConstant|keywordConstant|varName|varName '[' expression ']'|subroutineCall| '(' expression ')'|unaryOp term*/
-func compileTerm(c *CompilationEngine) {
+func CompileTerm(c *CompilationEngine) {
 	jackTokenizer.Advance(&c.tokenizer)
 	// check if it is an identifier
 	if jackTokenizer.TokenType(c.tokenizer) == "IDENTIFIER" {
@@ -779,7 +744,7 @@ func compileTerm(c *CompilationEngine) {
 			// push *(base+index) onto stack
 			VMWriter.WritePush("that",0,c.vmWriter)
 
-		}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" &&  stringInSlice(jackTokenizer.Symbol(c.tokenizer),arr2) {
+		}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" &&  StringInSlice(jackTokenizer.Symbol(c.tokenizer),arr2) {
 			//this is a subroutineCall
 			jackTokenizer.PointerBack(&c.tokenizer)
 			jackTokenizer.PointerBack(&c.tokenizer)
@@ -802,11 +767,13 @@ func compileTerm(c *CompilationEngine) {
 			}else if jackTokenizer.TokenType(c.tokenizer) == "STRING_CONST" {
 				// stringConstant new a string and append every char to the new stack
 				var str = jackTokenizer.StringVal(c.tokenizer)
-				var strLetters = strings.Split(str, "")[1]
+				var strLetters = strings.Split(str, "")
 				VMWriter.WritePush("constant", len(strLetters), c.vmWriter)
 				VMWriter.WriteCall("String.new", 1, c.vmWriter)
 				for i := 0; i < len(strLetters); i++ {
-					VMWriter.WritePush("constant", as.numeric(charToRaw(strLetters[i]))) // (int)str.charAt(i))
+					intVar, err := strconv.Atoi(strLetters[i])
+					_=err
+					VMWriter.WritePush("constant", intVar, c.vmWriter) // (int)str.charAt(i))
 					VMWriter.WriteCall("String.appendChar", 2, c.vmWriter)
 				}
 
@@ -819,162 +786,67 @@ func compileTerm(c *CompilationEngine) {
 // push this pointer onto stack
 				VMWriter.WritePush("pointer",0,c.vmWriter)
 
-			}else if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && stringInSlice(jackTokenizer.KeyWord(c.tokenizer),arr3) {
+			}else if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && StringInSlice(jackTokenizer.KeyWord(c.tokenizer),arr3) {
                 // 0 for false and null
 				VMWriter.WritePush("constant", 0,c.vmWriter)
 			}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "(" {
 // expression
-				CompilleExpression()
+				CompileExpression()
 // ')'
             RequireSymbol(")",c)
-			}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && stringInSlice(jackTokenizer.Symbol(c.tokenizer),arr4) {
+			}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && StringInSlice(jackTokenizer.Symbol(c.tokenizer),arr4) {
 
-s <- self$tokenizer$symbol()
+				s := jackTokenizer.Symbol(c.tokenizer)
 
-## term
-self$compileTerm()
+				// term
+				CompileTerm(c)
 
-if (s == '-') {
-self$vmWriter$writeArithmetic("neg")
-}else { ## ~
-self$vmWriter$writeArithmetic("not")
-}
+				if s == "-" {
+					VMWriter.WriteArithmetic("neg", c.vmWriter)
+				}else { // ~
+					VMWriter.WriteArithmetic("not", c.vmWriter)
+				}
 
-}else {
-self$throwException("Expected integerConstant or stringConstant or keywordConstant or '(' expression ')' or unaryOp term")
-}
-}
-},
-
-		}
+			}else {
+				print("Expected integerConstant or stringConstant or keywordConstant or '(' expression ')' or unaryOp term")
+			}
 	}
 }
-compileTerm = function() {
-self$tokenizer$advance()
-## check if it is an identifier
-if (self$tokenizer$tokenType() == "IDENTIFIER") {
-## varName|varName '[' expression ']'|subroutineCall
-tempId <- self$tokenizer$identifier()
-
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '[') {
-## this is an array entry
-## expression
-self$compileExpression()
-## ']'
-self$requireSymbol(']')
-
-## push array variable,base address into stack
-self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(tempId)), self$symbolTable$indexOf(tempId))
 
 
-## base + offset
-self$vmWriter$writeArithmetic("add")
+// Compiles a (possibly empty) comma-separated list of expressions.
+// (expression(','expression)*)?
+func CompileExpressionList(c *CompilationEngine) int{
+	nArgs := 0
 
-## pop into 'that' pointer
-self$vmWriter$writePop("pointer", 1)
-## push *(base+index) onto stack
-self$vmWriter$writePush("that", 0)
-} else if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() %in% c("(", ".")) {
-## this is a subroutineCall
-self$tokenizer$pointerBack()
-self$tokenizer$pointerBack()
-self$compileSubroutineCall()
-} else {
-## this is varName
-self$tokenizer$pointerBack()
-## push variable directly onto stack
-self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(tempId)), self$symbolTable$indexOf(tempId))
+	jackTokenizer.Advance(&c.tokenizer)
+	// determine if there is any expression, if next is ')' then no
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == ")" {
+		jackTokenizer.PointerBack(&c.tokenizer)
+	} else {
+		nArgs = 1
+		jackTokenizer.PointerBack(&c.tokenizer)
+		// expression
+		CompileExpression(c)
+		// (','expression)*
+		for true{
+			jackTokenizer.Advance(&c.tokenizer)
+			if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "," {
+				// expression
+				CompileExpression()
+				nArgs = nArgs + 1
+			}else {
+				jackTokenizer.PointerBack(&c.tokenizer)
+				break
+			}
+		}
+	}
+
+	return nArgs
 }
-
-} else {
-## integerConstant|stringConstant|keywordConstant|'(' expression ')'|unaryOp term
-if (self$tokenizer$tokenType() == "INT_CONST") {
-## integerConstant just push its value onto stack
-self$vmWriter$writePush("constant", self$tokenizer$intVal())
-}else if (self$tokenizer$tokenType() == "STRING_CONST") {
-## stringConstant new a string and append every char to the new stack
-str <- self$tokenizer$stringVal()
-
-strLetters <- strsplit(str, "")[[1]]
-
-self$vmWriter$writePush("constant", length(strLetters))
-self$vmWriter$writeCall("String.new", 1)
-
-for (i in 1:length(strLetters)) {
-self$vmWriter$writePush("constant", as.numeric(charToRaw(strLetters[i]))) ## (int)str.charAt(i))
-self$vmWriter$writeCall("String.appendChar", 2)
-}
-
-}else if(self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() == "TRUE") {
-## ~0 is true
-self$vmWriter$writePush("constant", 0)
-self$vmWriter$writeArithmetic("not")
-
-}else if(self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() == "THIS") {
-## push this pointer onto stack
-self$vmWriter$writePush("pointer", 0)
-
-}else if(self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() %in% c("FALSE", "NULL")) {
-## 0 for false and null
-self$vmWriter$writePush("constant", 0)
-}else if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '(') {
-## expression
-self$compileExpression()
-## ')'
-self$requireSymbol(')')
-}else if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() %in% c("-", "~")) {
-
-s <- self$tokenizer$symbol()
-
-## term
-self$compileTerm()
-
-if (s == '-') {
-self$vmWriter$writeArithmetic("neg")
-}else { ## ~
-self$vmWriter$writeArithmetic("not")
-}
-
-}else {
-self$throwException("Expected integerConstant or stringConstant or keywordConstant or '(' expression ')' or unaryOp term")
-}
-}
-},
-
-## Compiles a (possibly empty) comma-separated list of expressions.
-## (expression(','expression)*)?
-compileExpressionList = function() {
-nArgs <- 0
-
-self$tokenizer$advance()
-## determine if there is any expression, if next is ')' then no
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == ')') {
-self$tokenizer$pointerBack()
-} else {
-nArgs <- 1
-self$tokenizer$pointerBack()
-## expression
-self$compileExpression()
-## (','expression)*
-repeat{
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == ',') {
-## expression
-self$compileExpression()
-nArgs <- nArgs + 1
-}else {
-self$tokenizer$pointerBack()
-break
-}
-}
-}
-
-return(nArgs)
-},
 
 //Returns current function name, className.subroutineName.
-func currentFunction(c *CompilationEngine) string  {
+func CurrentFunction(c *CompilationEngine) string  {
 
 	if len(c.currentClass)!=0 && len(c.currentSubroutine)!=0{
 		return c.currentClass+"."+c.currentSubroutine
@@ -988,7 +860,7 @@ func CompileType(c *CompilationEngine) string {
 	jackTokenizer.Advance(&c.tokenizer)
 	arr := []string{"INT", "CHAR", "BOOLEAN"}
 	//var arr [3]=["CONSTRUCTOR", "FUNCTION", "METHOD"]
-	if jackTokenizer.TokenType(c.tokenizer)=="KEYWORD" && stringInSlice(jackTokenizer.KeyWord(c.tokenizer),arr) {
+	if jackTokenizer.TokenType(c.tokenizer)=="KEYWORD" && StringInSlice(jackTokenizer.KeyWord(c.tokenizer),arr) {
 		return c.tokenizer.CurrentToken
 	}
 	if jackTokenizer.TokenType(c.tokenizer)=="IDENTIFIER"{
@@ -1002,7 +874,7 @@ func CompileType(c *CompilationEngine) string {
 
 
 
-func stringInSlice(a string, list []string) bool {
+func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
 			return true
