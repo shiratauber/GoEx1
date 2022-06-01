@@ -1,54 +1,52 @@
 package CompilationEngine
 
 import (
-	"GoEx1/jackTokenizer"
-	"GoEx1/VMWriter"
 	"GoEx1/SymbolTable"
-		"os"
+	"GoEx1/VMWriter"
+	"GoEx1/jackTokenizer"
+	"os"
 	"strconv"
 	"strings"
 )
+
 type CompilationEngine struct {
-	tokenizer jackTokenizer.JackTokenizer
-	vmWriter  VMWriter.Writer
-	symbolTable  SymbolTable.SymbolTable
-	currentClass string
+	tokenizer         jackTokenizer.JackTokenizer
+	vmWriter          VMWriter.Writer
+	symbolTable       SymbolTable.SymbolTable
+	currentClass      string
 	currentSubroutine string
-	labelIndex int
-	labelCounterIf int
+	labelIndex        int
+	labelCounterIf    int
 	labelCounterWhile int
 }
 
-
-
 func New(inputFile *os.File, outputFile *os.File) CompilationEngine {
 
-
-	mofa := CompilationEngine{jackTokenizer.New(inputFile), VMWriter.New(outputFile),SymbolTable.New(),",","",0,0,0}
+	mofa := CompilationEngine{jackTokenizer.New(inputFile), VMWriter.New(outputFile), SymbolTable.New(), ",", "", 0, 0, 0}
 	compileClass(&mofa)
 	return mofa
 
 }
 
-func compileClass(c *CompilationEngine)  {
+func compileClass(c *CompilationEngine) {
 	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || jackTokenizer.KeyWord(c.tokenizer) != "CLASS" {
-		print("ERROR IN ADVANCE OF COMPILECLASS")
+		print("ERROR IN ADVANCE OF COMPILECLASS" + "\n")
 	}
 
 	jackTokenizer.Advance(&c.tokenizer)
-	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER"{
-		print("EXPECTED CLASSNAME")
+	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+		print("EXPECTED CLASSNAME" + "\n")
 	}
 
-    c.currentClass=jackTokenizer.Identifier(c.tokenizer)
-    RequireSymbol("{", c)
+	c.currentClass = jackTokenizer.Identifier(c.tokenizer)
+	RequireSymbol("{", c)
 
 	// classVarDec* subroutineDec*
 	CompileClassVarDec(c)
 	CompileSubroutine(c)
 
-	RequireSymbol("}", c)              //  }
+	RequireSymbol("}", c) //  }
 
 	if jackTokenizer.HasMoreTokens(&c.tokenizer) {
 		print("Unexpected tokens!")
@@ -57,19 +55,14 @@ func compileClass(c *CompilationEngine)  {
 
 	VMWriter.Close(c.vmWriter)
 
-
-
-
-
 }
-func RequireSymbol(s string, c *CompilationEngine)  {
+func RequireSymbol(s string, c *CompilationEngine) {
 	jackTokenizer.Advance(&c.tokenizer)
-	if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || jackTokenizer.Symbol(c.tokenizer)!= s {
-		print("ERROR EXPECTED SYMBOL")
+	if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || jackTokenizer.Symbol(c.tokenizer) != s {
+		print("ERROR EXPECTED SYMBOL" + "\n")
 	}
 
 }
-
 
 // Compiles a static declaration or a field declaration.
 // classVarDec ('static'|'field') type varName (','varNAme)* ';'
@@ -86,27 +79,27 @@ func CompileClassVarDec(c *CompilationEngine) {
 
 	// next is start subroutineDec or classVarDec, both start with keyword
 	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" {
-		print("Expected keyword")
+		print("Expected keyword" + "\n")
 	}
 
 	// next is subroutineDec
-	if jackTokenizer.KeyWord(c.tokenizer) == "CONSTRUCTOR"|| jackTokenizer.KeyWord(c.tokenizer) == "FUNCTION"|| jackTokenizer.KeyWord(c.tokenizer) == "METHOD" {
+	if jackTokenizer.KeyWord(c.tokenizer) == "CONSTRUCTOR" || jackTokenizer.KeyWord(c.tokenizer) == "FUNCTION" || jackTokenizer.KeyWord(c.tokenizer) == "METHOD" {
 		jackTokenizer.PointerBack(&c.tokenizer)
 		return
 	}
 
 	// classVarDec exists
-	if !(jackTokenizer.KeyWord(c.tokenizer) =="STATIC" ||jackTokenizer.KeyWord(c.tokenizer) == "FIELD") {
-		print("Expected static or field")
+	if !(jackTokenizer.KeyWord(c.tokenizer) == "STATIC" || jackTokenizer.KeyWord(c.tokenizer) == "FIELD") {
+		print("Expected static or field" + "\n")
 	}
 
 	kind := jackTokenizer.KeyWord(c.tokenizer)
 	typeTok := CompileType(c)
 
-	for true{
-			// varName
-			jackTokenizer.Advance(&c.tokenizer)
-			if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+	for true {
+		// varName
+		jackTokenizer.Advance(&c.tokenizer)
+		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
 			print("Expected identifier")
 		}
 
@@ -116,8 +109,8 @@ func CompileClassVarDec(c *CompilationEngine) {
 		// , or ;
 		jackTokenizer.Advance(&c.tokenizer)
 
-		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !(jackTokenizer.Symbol(c.tokenizer) ==","|| jackTokenizer.Symbol(c.tokenizer)==";" ) {
-			print("Expected , or ;")
+		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !(jackTokenizer.Symbol(c.tokenizer) == "," || jackTokenizer.Symbol(c.tokenizer) == ";") {
+			print("Expected , or ;" + "\n")
 		}
 
 		if jackTokenizer.Symbol(c.tokenizer) == ";" {
@@ -141,9 +134,9 @@ func CompileSubroutine(c *CompilationEngine) {
 	}
 
 	// start of a subroutine
-	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || !(jackTokenizer.KeyWord(c.tokenizer)=="CONSTRUCTOR" ||
-		jackTokenizer.KeyWord(c.tokenizer) =="FUNCTION"||jackTokenizer.KeyWord(c.tokenizer)== "METHOD") {
-		print("Expected constructor or function or method")
+	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || !(jackTokenizer.KeyWord(c.tokenizer) == "CONSTRUCTOR" ||
+		jackTokenizer.KeyWord(c.tokenizer) == "FUNCTION" || jackTokenizer.KeyWord(c.tokenizer) == "METHOD") {
+		print("Expected constructor or function or method" + "\n")
 	}
 
 	keyword := jackTokenizer.KeyWord(c.tokenizer)
@@ -154,21 +147,22 @@ func CompileSubroutine(c *CompilationEngine) {
 		SymbolTable.Define("this", c.currentClass, "ARG", &c.symbolTable)
 	}
 
+	///////////////////////////////////////////////////////////////////////////////////////
 	typeTok := ""
-
+	_ = typeTok
 	// 'void' or typeTok
 	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.KeyWord(c.tokenizer) == "VOID" {
-	typeTok  = "void"
+		typeTok = "void"
 	} else {
 		jackTokenizer.PointerBack(&c.tokenizer)
-	typeTok  = CompileType(c)
+		typeTok = CompileType(c)
 	}
 
 	// subroutineName which is a identifier
 	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
-		print("Expected subroutineName")
+		print("Expected subroutineName" + "\n")
 	}
 
 	c.currentSubroutine = jackTokenizer.Identifier(c.tokenizer)
@@ -226,7 +220,7 @@ func CompileStatement(c *CompilationEngine) {
 	// determine whether there is a statement next can be a '}'
 	jackTokenizer.Advance(&c.tokenizer)
 	// next is a '}'
-	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "}"{
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "}" {
 		jackTokenizer.PointerBack(&c.tokenizer)
 		return
 	}
@@ -237,20 +231,20 @@ func CompileStatement(c *CompilationEngine) {
 		switch jackTokenizer.KeyWord(c.tokenizer) {
 		case "LET":
 			{
-				CompileLet()
+				CompileLet(c)
 				break
 			}
 		case "IF":
 			{
-				CompileIf()
+				CompileIf(c)
 				break
 			}
 		case "WHILE":
 			{
-				CompileWhile()
+				CompileWhile(c)
 				break
 			}
-		case "DO" :
+		case "DO":
 			{
 				CompileDo(c)
 				break
@@ -262,34 +256,35 @@ func CompileStatement(c *CompilationEngine) {
 			}
 		default:
 			{ //   default
-				print("Expected let or if or while or do or return")
+				print("Expected let or if or while or do or return" + "\n")
 			}
 		}
 	}
 
 	CompileStatement(c)
 }
+
 // Compiles a (possibly empty) parameter list,
 // not including the enclosing "()".
 // ((type varName)(',' type varName)*)?
 func CompileParameterList(c *CompilationEngine) {
 	// Check if there is parameterList, if next token is ')' than go back
 	jackTokenizer.Advance(&c.tokenizer)
-	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == ")"{
+	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == ")" {
 		jackTokenizer.PointerBack(&c.tokenizer)
 		return
 	}
 	// there is parameter, at least one varName
 	jackTokenizer.PointerBack(&c.tokenizer)
-	for true{
+	for true {
 		// typeTok
-		typeTok  := CompileType(c)
+		typeTok := CompileType(c)
 		// varName
 		jackTokenizer.Advance(&c.tokenizer)
 		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
 			print("Expected identifier")
 		}
-		SymbolTable.Define(jackTokenizer.Identifier(c.tokenizer), typeTok , "ARG", &c.symbolTable)
+		SymbolTable.Define(jackTokenizer.Identifier(c.tokenizer), typeTok, "ARG", &c.symbolTable)
 		// ',' or ')'
 		jackTokenizer.Advance(&c.tokenizer)
 		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !(jackTokenizer.Symbol(c.tokenizer) == "," ||
@@ -303,29 +298,28 @@ func CompileParameterList(c *CompilationEngine) {
 	}
 }
 
-
 func CompileVarDec(c *CompilationEngine) {
 	// determine if there is a varDec
 	jackTokenizer.Advance(&c.tokenizer)
 	// no 'var' go back
-	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || jackTokenizer.KeyWord(c.tokenizer) != "VAR"{
+	if jackTokenizer.TokenType(c.tokenizer) != "KEYWORD" || jackTokenizer.KeyWord(c.tokenizer) != "VAR" {
 		jackTokenizer.PointerBack(&c.tokenizer)
 		return
 	}
 	// typeTok
-	typeTok  := CompileType(c)
-	for true{
+	typeTok := CompileType(c)
+	for true {
 		// varName
 		jackTokenizer.Advance(&c.tokenizer)
 		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
-			print("Expected identifier")
+			print("Expected identifier" + "\n")
 		}
-		SymbolTable.Define(jackTokenizer.Identifier(c.tokenizer), typeTok , "VAR", &c.symbolTable)
+		SymbolTable.Define(jackTokenizer.Identifier(c.tokenizer), typeTok, "VAR", &c.symbolTable)
 		// ',' or ';'
 		jackTokenizer.Advance(&c.tokenizer)
 		arr := []string{",", ";"}
-		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !StringInSlice(jackTokenizer.Symbol(c.tokenizer),arr) {
-			print("Expected , or ;")
+		if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !StringInSlice(jackTokenizer.Symbol(c.tokenizer), arr) {
+			print("Expected , or ;" + "\n")
 		}
 		if jackTokenizer.Symbol(c.tokenizer) == ";" {
 			break
@@ -333,8 +327,6 @@ func CompileVarDec(c *CompilationEngine) {
 	}
 	CompileVarDec(c)
 }
-
-
 
 //compileStatements = function() {},
 
@@ -353,8 +345,8 @@ func CompileDo(c *CompilationEngine) {
 // subroutineName '(' expressionList ')' | (className|varName) '.' subroutineName '(' expressionList ')'
 func CompileSubroutineCall(c *CompilationEngine) {
 	jackTokenizer.Advance(&c.tokenizer)
-	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER"{
-		print("Expected identifier")
+	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+		print("Expected identifier" + "\n")
 	}
 
 	name := jackTokenizer.Identifier(c.tokenizer)
@@ -370,7 +362,7 @@ func CompileSubroutineCall(c *CompilationEngine) {
 		// ')'
 		RequireSymbol(")", c)
 		// call subroutine
-		VMWriter.WriteCall(c.currentClass+ "."+ name, nArgs, c.vmWriter)
+		VMWriter.WriteCall(c.currentClass+"."+name, nArgs, c.vmWriter)
 	} else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "." {
 		// (className|varName) '.' subroutineName '(' expressionList ')'
 
@@ -378,25 +370,25 @@ func CompileSubroutineCall(c *CompilationEngine) {
 		// subroutineName
 		jackTokenizer.Advance(&c.tokenizer)
 
-		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER"{
-			print("Expected identifier")
+		if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+			print("Expected identifier" + "\n")
 		}
 
 		name = jackTokenizer.Identifier(c.tokenizer)
 
 		// check for if it is built-in typeTok
-		typeTok  := SymbolTable.TypeOf(objName, &c.symbolTable)
+		typeTok := SymbolTable.TypeOf(objName, &c.symbolTable)
 
 		arr := []string{"int", "boolean", "char", "void"}
 		if StringInSlice(typeTok, arr) {
 			print("No built-in type")
-		} else if typeTok  == "" {
-			name = objName+ "."+ name
+		} else if typeTok == "" {
+			name = objName + "." + name
 		} else {
 			nArgs = 1
 			// push variable directly onto stack
-			VMWriter.WritePush(getSeg(SymbolTable.KindOf(objName, &c.symbolTable)), SymbolTable.IndexOf(objName, &c.symbolTable), c.vmWriter)
-			name = SymbolTable.TypeOf(objName, &c.symbolTable)+ "."+ name
+			VMWriter.WritePush(GetSeg(SymbolTable.KindOf(objName, &c.symbolTable)), SymbolTable.IndexOf(objName, &c.symbolTable), c.vmWriter)
+			name = SymbolTable.TypeOf(objName, &c.symbolTable) + "." + name
 		}
 
 		// '('
@@ -409,91 +401,96 @@ func CompileSubroutineCall(c *CompilationEngine) {
 		VMWriter.WriteCall(name, nArgs, c.vmWriter)
 
 	} else {
-		print("Expected ( or .")
+		print("Expected ( or ." + "\n")
 	}
 }
 
 // Compiles a let statement
 // 'let' varName ('[' ']')? '=' expression ';'
-compileLet = function() {   // let diff = y - x;
-// varName
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() != "IDENTIFIER") {
-self$throwException("Expected varName")
+func CompileLet(c *CompilationEngine) { // let diff = y - x;
+	// varName
+	jackTokenizer.Advance(&c.tokenizer)
+	if jackTokenizer.TokenType(c.tokenizer) != "IDENTIFIER" {
+		print("Expected varName" + "\n")
+	}
+
+	varName := jackTokenizer.Identifier(c.tokenizer)
+	// print(paste("VARNAME :", varName))
+
+	// '[' or '='
+	jackTokenizer.Advance(&c.tokenizer)
+	arr := []string{"[", "="}
+	if jackTokenizer.TokenType(c.tokenizer) != "SYMBOL" || !(StringInSlice(jackTokenizer.Symbol(c.tokenizer), arr)) {
+		print("Expected [ or =" + "\n")
+	}
+
+	expExist := false
+
+	// '[' expression ']' , need to deal with array [base + offset]
+	if jackTokenizer.Symbol(c.tokenizer) == "[" {
+		expExist = true
+
+		// calc offset
+		CompileExpression(c)
+
+		// ']'
+		RequireSymbol("]", c)
+
+		// push array variable,base address into stack
+		VMWriter.WritePush(GetSeg(SymbolTable.KindOf(varName, &c.symbolTable)), SymbolTable.IndexOf(varName, &c.symbolTable), c.vmWriter)
+
+		// base + offset
+		VMWriter.WriteArithmetic("add", c.vmWriter)
+	}
+
+	if expExist == true {
+		jackTokenizer.Advance(&c.tokenizer)
+	}
+
+	// expression
+	CompileExpression(c)
+
+	// ';'
+	RequireSymbol(";", c)
+
+	if expExist == true {
+		// *(base + offset) = expression
+		// pop expression value to temp
+		VMWriter.WritePop("temp", 0, c.vmWriter)
+		// pop base + index into 'that'
+		// self$vmWriter$writePop("pointer", 0)
+		VMWriter.WritePop("pointer", 1, c.vmWriter)
+		// pop expression value into *(base + index)
+		VMWriter.WritePush("temp", 0, c.vmWriter)
+		VMWriter.WritePop("that", 0, c.vmWriter)
+		//print(paste("VARNEME :", varName))
+	} else {
+		// pop expression value directly
+		VMWriter.WritePop(GetSeg(SymbolTable.KindOf(varName, &c.symbolTable)), SymbolTable.IndexOf(varName, &c.symbolTable), c.vmWriter)
+		// print(paste("VARNEME :", varName))
+	}
+
 }
-
-varName <- self$tokenizer$identifier()
-// print(paste("VARNAME :", varName))
-
-// '[' or '='
-self$tokenizer$advance()
-if (self$tokenizer$tokenType() != "SYMBOL" | !(self$tokenizer$symbol() %in% c("[", "="))) {
-self$throwException("Expected [ or =")
-}
-
-expExist <- FALSE
-
-// '[' expression ']' , need to deal with array [base + offset]
-if (self$tokenizer$symbol() == '[') {
-expExist <- TRUE
-
-// calc offset
-self$compileExpression()
-
-// ']'
-self$requireSymbol(']')
-
-// push array variable,base address into stack
-self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(varName)), self$symbolTable$indexOf(varName))
-
-// base + offset
-self$vmWriter$writeArithmetic("add")
-}
-
-if (expExist == TRUE) {
-self$tokenizer$advance()
-}
-
-// expression
-self$compileExpression()
-
-// ';'
-self$requireSymbol(';')
-
-if (expExist == TRUE) {
-// *(base + offset) = expression
-// pop expression value to temp
-self$vmWriter$writePop("temp", 0)
-// pop base + index into 'that'
-// self$vmWriter$writePop("pointer", 0)
-self$vmWriter$writePop("pointer", 1)
-// pop expression value into *(base + index)
-self$vmWriter$writePush("temp", 0)
-self$vmWriter$writePop("that", 0)
-//print(paste("VARNEME :", varName))
-} else {
-// pop expression value directly
-self$vmWriter$writePop(self$getSeg(self$symbolTable$kindOf(varName)), self$symbolTable$indexOf(varName))
-// print(paste("VARNEME :", varName))
-}
-
-},
 
 // Returns corresponding segment for input kind.
-func getSeg(kind string) string{
+func GetSeg(kind string) string {
 	switch kind {
-	case "FIELD":{
-		return "this"
-	}
-	case "STATIC":{
-		return "static"
-	}
-	case "VAR":{
-		return "local"
-	}
-	case "ARG":{
-		return "argument"
-	}
+	case "FIELD":
+		{
+			return "this"
+		}
+	case "STATIC":
+		{
+			return "static"
+		}
+	case "VAR":
+		{
+			return "local"
+		}
+	case "ARG":
+		{
+			return "argument"
+		}
 	default:
 		return "NONE"
 	}
@@ -501,9 +498,9 @@ func getSeg(kind string) string{
 
 // Compiles a while statement.
 // 'while' '(' expression ')' '{' statements '}'
-func compileWhile(c *CompilationEngine) {
-	whileExpLabel := "WHILE_EXP"+ string(c.labelCounterWhile)
-	whileEndLabel := "WHILE_END"+ string(c.labelCounterWhile)
+func CompileWhile(c *CompilationEngine) {
+	whileExpLabel := "WHILE_EXP" + strconv.Itoa(c.labelCounterWhile)
+	whileEndLabel := "WHILE_END" + strconv.Itoa(c.labelCounterWhile)
 	c.labelCounterWhile = c.labelCounterWhile + 1
 
 	// top label for while loop
@@ -544,11 +541,11 @@ func CompileReturn(c *CompilationEngine) {
 	if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == ";" {
 		// no expression push 0 to stack
 		VMWriter.WritePush("constant", 0, c.vmWriter)
-	}else {
+	} else {
 		// expression exist
 		jackTokenizer.PointerBack(&c.tokenizer)
 		// expression
-		CompileExpression()
+		CompileExpression(c)
 		// ';'
 		RequireSymbol(";", c)
 	}
@@ -559,20 +556,20 @@ func CompileReturn(c *CompilationEngine) {
 // Compiles an if statement,
 // possibly with a trailing else clause.
 // 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
-func compileIf(c *CompilationEngine) {
-	ifTrueLabel := "IF_TRUE"+ string(c.labelCounterIf)
-	ifFalseLabel := "IF_FALSE"+ string(c.labelCounterIf)
-	ifEndLabel := "IF_END"+ string(c.labelCounterIf)
+func CompileIf(c *CompilationEngine) {
+	ifTrueLabel := "IF_TRUE" + strconv.Itoa(c.labelCounterIf)
+	ifFalseLabel := "IF_FALSE" + strconv.Itoa(c.labelCounterIf)
+	ifEndLabel := "IF_END" + strconv.Itoa(c.labelCounterIf)
 	c.labelCounterIf = c.labelCounterIf + 1
 
 	// '('
-	RequireSymbol("(",c)
+	RequireSymbol("(", c)
 	// expression
 	CompileExpression(c)
 	// ')'
-	RequireSymbol(")",c)
+	RequireSymbol(")", c)
 
-	VMWriter.WriteIf(ifTrueLabel,c.vmWriter)
+	VMWriter.WriteIf(ifTrueLabel, c.vmWriter)
 	VMWriter.WriteGoto(ifFalseLabel, c.vmWriter)
 	VMWriter.WriteLabel(ifTrueLabel, c.vmWriter)
 
@@ -581,98 +578,96 @@ func compileIf(c *CompilationEngine) {
 	// statements
 	CompileStatement(c)
 	// '}'
-	RequireSymbol("}",c)
+	RequireSymbol("}", c)
 
 	// check if there is 'else'
 	jackTokenizer.Advance(&c.tokenizer)
 	if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.KeyWord(c.tokenizer) == "ELSE" {
-	// ifEndLabel <- paste("IF_END", self$labelIndex, sep="")
-	VMWriter.WriteGoto(ifEndLabel,c.vmWriter)
-	VMWriter.WriteLabel(ifFalseLabel,c.vmWriter)
+		// ifEndLabel <- paste("IF_END", self$labelIndex, sep="")
+		VMWriter.WriteGoto(ifEndLabel, c.vmWriter)
+		VMWriter.WriteLabel(ifFalseLabel, c.vmWriter)
 
-	// '{'
-	RequireSymbol("{",c)
-	// statements
-	CompileStatement(c)
-	// '}'
-	RequireSymbol("}",c)
+		// '{'
+		RequireSymbol("{", c)
+		// statements
+		CompileStatement(c)
+		// '}'
+		RequireSymbol("}", c)
 
-	VMWriter.WriteLabel(ifEndLabel,c.vmWriter)
-	}else {   //   only if
-	jackTokenizer.PointerBack(&c.tokenizer)
-	VMWriter.WriteLabel(ifFalseLabel,c.vmWriter)
+		VMWriter.WriteLabel(ifEndLabel, c.vmWriter)
+	} else { //   only if
+		jackTokenizer.PointerBack(&c.tokenizer)
+		VMWriter.WriteLabel(ifFalseLabel, c.vmWriter)
 	}
 
 }
-
 
 // Compiles an expression
 // term (op term)*
 func CompileExpression(c *CompilationEngine) {
 
-		//term
-		CompileTerm(c)
-		// (op term)*
-		for true {
-			jackTokenizer.Advance(&c.tokenizer)
-			// op
-			if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.IsOp(jackTokenizer.Symbol(c.tokenizer)) {
+	//term
+	CompileTerm(c)
+	// (op term)*
+	for true {
+		jackTokenizer.Advance(&c.tokenizer)
+		// op
+		if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.IsOp(jackTokenizer.Symbol(c.tokenizer)) {
 
-				var opCommand = ""
-				switch jackTokenizer.Symbol(c.tokenizer) {
-				case "+":
-					{
-						opCommand = "add"
-					}
-				case "-":
-					{
-						opCommand = "sub"
-					}
-				case "*":
-					{
-						opCommand = "call Math.multiply 2"
-					}
-				case "/":
-					{
-						opCommand = "call Math.divide 2"
-					}
-				case "<":
-					{
-						opCommand = "lt"
-					}
-				case ">":
-					{
-						opCommand = "gt"
-					}
-				case "&":
-					{
-						opCommand = "and"
-					}
-				case "=":
-					{
-						opCommand = "eq"
-					}
-				case "|":
-					{
-						opCommand = "or"
-					}
-				default:
-					print("UnknownOp")
-
+			var opCommand = ""
+			switch jackTokenizer.Symbol(c.tokenizer) {
+			case "+":
+				{
+					opCommand = "add"
 				}
+			case "-":
+				{
+					opCommand = "sub"
+				}
+			case "*":
+				{
+					opCommand = "call Math.multiply 2"
+				}
+			case "/":
+				{
+					opCommand = "call Math.divide 2"
+				}
+			case "<":
+				{
+					opCommand = "lt"
+				}
+			case ">":
+				{
+					opCommand = "gt"
+				}
+			case "&":
+				{
+					opCommand = "and"
+				}
+			case "=":
+				{
+					opCommand = "eq"
+				}
+			case "|":
+				{
+					opCommand = "or"
+				}
+			default:
+				print("UnknownOp")
 
-				// term
-				CompileTerm(c)
-
-				VMWriter.WriteCommand(opCommand, c.vmWriter)
-			} else {
-				jackTokenizer.PointerBack(&c.tokenizer)
-				break
 			}
 
-		}
-}
+			// term
+			CompileTerm(c)
 
+			VMWriter.WriteCommand(opCommand, c.vmWriter)
+		} else {
+			jackTokenizer.PointerBack(&c.tokenizer)
+			break
+		}
+
+	}
+}
 
 /*## Compiles a term. This routine is faced with a
 ## slight difficulty when trying to decide
@@ -699,93 +694,93 @@ func CompileTerm(c *CompilationEngine) {
 		if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "[" {
 			//this is an array entry
 			//expression
-			CompileExpression()
+			CompileExpression(c)
 			// ']'
 			RequireSymbol("]", c)
 			//push array variable,base address into stack
-			VMWriter.WritePush(getSeg(SymbolTable.KindOf(tempId, &c.symbolTable)), SymbolTable.IndexOf(tempId, &c.symbolTable),c.vmWriter)
+			VMWriter.WritePush(GetSeg(SymbolTable.KindOf(tempId, &c.symbolTable)), SymbolTable.IndexOf(tempId, &c.symbolTable), c.vmWriter)
 			// base + offset
-			VMWriter.WriteArithmetic("add",c.vmWriter)
+			VMWriter.WriteArithmetic("add", c.vmWriter)
 
 			// pop into 'that' pointer
-			VMWriter.WritePop("pointer",1,c.vmWriter)
+			VMWriter.WritePop("pointer", 1, c.vmWriter)
 
 			// push *(base+index) onto stack
-			VMWriter.WritePush("that",0,c.vmWriter)
+			VMWriter.WritePush("that", 0, c.vmWriter)
 
-		}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" &&  StringInSlice(jackTokenizer.Symbol(c.tokenizer),arr2) {
+		} else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && StringInSlice(jackTokenizer.Symbol(c.tokenizer), arr2) {
 			//this is a subroutineCall
 			jackTokenizer.PointerBack(&c.tokenizer)
 			jackTokenizer.PointerBack(&c.tokenizer)
-			CompileSubroutineCall()
+			CompileSubroutineCall(c)
 		} else {
 			//this is varName
 			jackTokenizer.PointerBack(&c.tokenizer)
 			// push variable directly onto stack
-			VMWriter.WritePush(getSeg(SymbolTable.KindOf(tempId,&c.symbolTable)),SymbolTable.IndexOf(tempId,&c.symbolTable),c.vmWriter )
+			VMWriter.WritePush(GetSeg(SymbolTable.KindOf(tempId, &c.symbolTable)), SymbolTable.IndexOf(tempId, &c.symbolTable), c.vmWriter)
 		}
 
-		} else {
-			// integerConstant|stringConstant|keywordConstant|'(' expression ')'|unaryOp term
+	} else {
+		// integerConstant|stringConstant|keywordConstant|'(' expression ')'|unaryOp term
 		arr3 := []string{"FALSE", "NULL"}
 
 		arr4 := []string{"-", "~"}
 		if jackTokenizer.TokenType(c.tokenizer) == "INT_CONST" {
-				//integerConstant just push its value onto stack
-				VMWriter.WritePush("constant", jackTokenizer.IntVal(c.tokenizer),c.vmWriter)
-			}else if jackTokenizer.TokenType(c.tokenizer) == "STRING_CONST" {
-				// stringConstant new a string and append every char to the new stack
-				var str = jackTokenizer.StringVal(c.tokenizer)
-				var strLetters = strings.Split(str, "")
-				VMWriter.WritePush("constant", len(strLetters), c.vmWriter)
-				VMWriter.WriteCall("String.new", 1, c.vmWriter)
-				for i := 0; i < len(strLetters); i++ {
-					intVar, err := strconv.Atoi(strLetters[i])
-					_=err
-					VMWriter.WritePush("constant", intVar, c.vmWriter) // (int)str.charAt(i))
-					VMWriter.WriteCall("String.appendChar", 2, c.vmWriter)
-				}
-
-			}else if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.Symbol(c.tokenizer) == "TRUE"{
-
-				// ~0 is true
-				VMWriter.WritePush("constant", 0,c.vmWriter)
-				VMWriter.WriteArithmetic("not",c.vmWriter)
-			}else if jackTokenizer.TokenType(c.tokenizer)== "KEYWORD" && jackTokenizer.Symbol(c.tokenizer) == "THIS" {
-// push this pointer onto stack
-				VMWriter.WritePush("pointer",0,c.vmWriter)
-
-			}else if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && StringInSlice(jackTokenizer.KeyWord(c.tokenizer),arr3) {
-                // 0 for false and null
-				VMWriter.WritePush("constant", 0,c.vmWriter)
-			}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "(" {
-// expression
-				CompileExpression()
-// ')'
-            RequireSymbol(")",c)
-			}else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && StringInSlice(jackTokenizer.Symbol(c.tokenizer),arr4) {
-
-				s := jackTokenizer.Symbol(c.tokenizer)
-
-				// term
-				CompileTerm(c)
-
-				if s == "-" {
-					VMWriter.WriteArithmetic("neg", c.vmWriter)
-				}else { // ~
-					VMWriter.WriteArithmetic("not", c.vmWriter)
-				}
-
-			}else {
-				print("Expected integerConstant or stringConstant or keywordConstant or '(' expression ')' or unaryOp term")
+			//integerConstant just push its value onto stack
+			VMWriter.WritePush("constant", jackTokenizer.IntVal(c.tokenizer), c.vmWriter)
+		} else if jackTokenizer.TokenType(c.tokenizer) == "STRING_CONST" {
+			// stringConstant new a string and append every char to the new stack
+			var str = jackTokenizer.StringVal(c.tokenizer)
+			var strLetters = strings.Split(str, "")
+			VMWriter.WritePush("constant", len(strLetters), c.vmWriter)
+			VMWriter.WriteCall("String.new", 1, c.vmWriter)
+			for i := 0; i < len(strLetters); i++ {
+				chars := []rune(strLetters[i])
+				//intVar, err := strconv.Atoi(strLetters[i])
+				//_ = err
+				VMWriter.WritePush("constant", int(chars[0]), c.vmWriter) // (int)str.charAt(i))
+				VMWriter.WriteCall("String.appendChar", 2, c.vmWriter)
 			}
+
+		} else if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.KeyWord(c.tokenizer) == "TRUE" {
+
+			// ~0 is true
+			VMWriter.WritePush("constant", 0, c.vmWriter)
+			VMWriter.WriteArithmetic("not", c.vmWriter)
+		} else if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && jackTokenizer.KeyWord(c.tokenizer) == "THIS" {
+			// push this pointer onto stack
+			VMWriter.WritePush("pointer", 0, c.vmWriter)
+
+		} else if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && StringInSlice(jackTokenizer.KeyWord(c.tokenizer), arr3) {
+			// 0 for false and null
+			VMWriter.WritePush("constant", 0, c.vmWriter)
+		} else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "(" {
+			// expression
+			CompileExpression(c)
+			// ')'
+			RequireSymbol(")", c)
+		} else if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && StringInSlice(jackTokenizer.Symbol(c.tokenizer), arr4) {
+
+			s := jackTokenizer.Symbol(c.tokenizer)
+
+			// term
+			CompileTerm(c)
+
+			if s == "-" {
+				VMWriter.WriteArithmetic("neg", c.vmWriter)
+			} else { // ~
+				VMWriter.WriteArithmetic("not", c.vmWriter)
+			}
+
+		} else {
+			print("Expected integerConstant or stringConstant or keywordConstant or '(' expression ')' or unaryOp term" + "\n")
+		}
 	}
 }
 
-
 // Compiles a (possibly empty) comma-separated list of expressions.
 // (expression(','expression)*)?
-func CompileExpressionList(c *CompilationEngine) int{
+func CompileExpressionList(c *CompilationEngine) int {
 	nArgs := 0
 
 	jackTokenizer.Advance(&c.tokenizer)
@@ -798,13 +793,13 @@ func CompileExpressionList(c *CompilationEngine) int{
 		// expression
 		CompileExpression(c)
 		// (','expression)*
-		for true{
+		for true {
 			jackTokenizer.Advance(&c.tokenizer)
 			if jackTokenizer.TokenType(c.tokenizer) == "SYMBOL" && jackTokenizer.Symbol(c.tokenizer) == "," {
 				// expression
-				CompileExpression()
+				CompileExpression(c)
 				nArgs = nArgs + 1
-			}else {
+			} else {
 				jackTokenizer.PointerBack(&c.tokenizer)
 				break
 			}
@@ -815,11 +810,11 @@ func CompileExpressionList(c *CompilationEngine) int{
 }
 
 //Returns current function name, className.subroutineName.
-func CurrentFunction(c *CompilationEngine) string  {
+func CurrentFunction(c *CompilationEngine) string {
 
-	if len(c.currentClass)!=0 && len(c.currentSubroutine)!=0{
-		return c.currentClass+"."+c.currentSubroutine
-	}else {
+	if len(c.currentClass) != 0 && len(c.currentSubroutine) != 0 {
+		return c.currentClass + "." + c.currentSubroutine
+	} else {
 		return ""
 	}
 
@@ -829,13 +824,13 @@ func CompileType(c *CompilationEngine) string {
 	jackTokenizer.Advance(&c.tokenizer)
 	arr := []string{"INT", "CHAR", "BOOLEAN"}
 	//var arr [3]=["CONSTRUCTOR", "FUNCTION", "METHOD"]
-	if jackTokenizer.TokenType(c.tokenizer)=="KEYWORD" && StringInSlice(jackTokenizer.KeyWord(c.tokenizer),arr) {
+	if jackTokenizer.TokenType(c.tokenizer) == "KEYWORD" && StringInSlice(jackTokenizer.KeyWord(c.tokenizer), arr) {
 		return c.tokenizer.CurrentToken
 	}
-	if jackTokenizer.TokenType(c.tokenizer)=="IDENTIFIER"{
+	if jackTokenizer.TokenType(c.tokenizer) == "IDENTIFIER" {
 		return jackTokenizer.Identifier(c.tokenizer)
 	}
-	print("Expected int or char or boolean or className")
+	print("Expected int or char or boolean or className" + "\n")
 	return ""
 }
 

@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	tokenizer()
+	//tokenizer()
 	//analayzer()
 	jackCompiler()
 	//VmToHack()
@@ -53,7 +53,7 @@ func jackCompiler() {
 			Check(err)
 
 			coEn := CompilationEngine.New(inputFile, outputFile)
-
+			_ = coEn
 		}
 
 	}

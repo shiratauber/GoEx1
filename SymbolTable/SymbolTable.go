@@ -49,10 +49,10 @@ func VarCount(kind string, s *SymbolTable) int {
 //If the identifier is unknown in the current scope returns NONE.
 func KindOf(name string, s *SymbolTable) string {
 	var sym = lookUp(name, s)
-	if sym.Sindex == -1 {
+	if Symbol.GetIndex(sym) == -1 {
 		return "NONE"
 	} else {
-		return sym.Skind
+		return Symbol.GetKind(sym)
 	}
 }
 
@@ -60,19 +60,19 @@ func KindOf(name string, s *SymbolTable) string {
 
 func TypeOf(name string, s *SymbolTable) string {
 	var sym = lookUp(name, s)
-	if sym.Sindex == -1 {
+	if Symbol.GetIndex(sym) == -1 {
 		return ""
 	} else {
-		return sym.Stype
+		return Symbol.GetType(sym)
 	}
 }
 
 func IndexOf(name string, s *SymbolTable) int {
 	var sym = lookUp(name, s)
-	if sym.Sindex == -1 {
+	if Symbol.GetIndex(sym) == -1 {
 		return -1
 	} else {
-		return sym.Sindex
+		return Symbol.GetIndex(sym)
 	}
 }
 
@@ -85,7 +85,7 @@ func lookUp(name string, s *SymbolTable) Symbol.Symbol {
 	} else if ok2 == true {
 		return s.classSymbols[name]
 	} else {
-		print("SYMBOL NOT FOUND ON TABLES :", name)
+		//print("SYMBOL NOT FOUND ON TABLES :", name+"\n")
 		return Symbol.New("", "", -1)
 	}
 

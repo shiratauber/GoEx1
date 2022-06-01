@@ -49,7 +49,7 @@ func WriteCommand(command string, c Writer) {
 }
 
 func WriteLabel(label string, c Writer) {
-	var s string = label + "\n"
+	var s string = "label " + label + "\n"
 	if _, err := c.OutputFile.WriteString(s); err != nil {
 		panic(err)
 	}

@@ -11,14 +11,14 @@ func New(St string, Sk string, Si int) Symbol {
 	return mofa
 
 }
-func getType(s Symbol) string {
+func GetType(s Symbol) string {
 	return s.Stype
 }
 
-func getKind(s Symbol) string {
+func GetKind(s Symbol) string {
 	return s.Skind
 }
 
-func getIndex(s Symbol) int {
+func GetIndex(s Symbol) int {
 	return s.Sindex
 }

@@ -12,7 +12,7 @@ type JackTokenizer struct {
 	CurrentToken     string
 	currentTokenType string
 	pointer          int
-	tokens           []string //  List<String
+	tokens           []string //  List<String>
 	tokensString     string
 }
 
@@ -27,7 +27,7 @@ func New(inputFile *os.File) JackTokenizer {
 	}
 	mofa := JackTokenizer{"character", "character", 0, nil, ""}
 
-	index = 1
+	index = 0
 	var totalNumberOfCharacters = len(allCharacters)
 
 	for index < totalNumberOfCharacters {
@@ -67,36 +67,36 @@ func New(inputFile *os.File) JackTokenizer {
 			mofa.tokensString += string(character) + "\n"
 			index = index + 1
 		} else if TabIsDigitsRegex(string(character)) { //   a digit
-			number := character
+			var number string = string(character)
 
 			for true {
 				index = index + 1
 				character = allCharacters[index]
 				if TabIsDigitsRegex(string(character)) {
-					number += character
+					number += string(character)
 				} else {
 					break
 				}
 			}
 
-			mofa.tokensString += string(number) + "\n"
+			mofa.tokensString += number + "\n"
 		} else if TabIsIdCharsRegex(string(character)) { //   an alphanumeric character(not number, if passed \d)
-			word := character
+			var word string = string(character)
 
 			for true {
 				index = index + 1
 				character = allCharacters[index]
 				if TabIsIdCharsRegex(string(character)) {
-					word += character
+					word += string(character)
 				} else {
 					break
 				}
 			}
 
-			mofa.tokensString += string(word) + "\n"
+			mofa.tokensString += word + "\n"
 		} else if character == '"' {
 			//index <- writeStringConstant(allCharacters, index, currentOutputFile)
-			stringContent := character
+			var stringContent string = string(character)
 			//   stringContent <- ""
 			//  TODO make sure if string should be with or without ""
 
@@ -104,20 +104,20 @@ func New(inputFile *os.File) JackTokenizer {
 				index = index + 1
 				character = allCharacters[index]
 				if character == '"' {
-					stringContent += character
+					stringContent += string(character)
 					index = index + 1 //   jump the closing "
 					break
 				} else {
-					stringContent += character
+					stringContent += string(character)
 				}
 			}
 
-			mofa.tokensString += string(stringContent) + "\n"
+			mofa.tokensString += stringContent + "\n"
 		} else { // ignore white spaces
 			index = index + 1
 		}
 	}
-	mofa.pointer = 1
+	mofa.pointer = 0
 	mofa.CurrentToken = ""
 	mofa.currentTokenType = "NONE"
 	mofa.tokens = strings.Split(mofa.tokensString, "\n")
@@ -149,15 +149,15 @@ func Advance(mofa *JackTokenizer) {
 		mofa.currentTokenType = "KEYWORD"
 	} else if TabIsSymbol(mofa.CurrentToken) {
 		mofa.currentTokenType = "SYMBOL"
-	} else if TabIsDigitsRegex(mofa.tokensString) {
+	} else if TabIsDigitsRegex(string(mofa.CurrentToken[0])) {
 		mofa.currentTokenType = "INT_CONST"
-	} else if TabIsStringConst(mofa.tokensString) {
+	} else if TabIsStringConst(string(mofa.CurrentToken[0])) {
 		// TODO need to verify if this works
 		mofa.currentTokenType = "STRING_CONST"
-	} else if TabIsIdCharsRegex(mofa.tokensString) {
+	} else if TabIsIdCharsRegex(string(mofa.CurrentToken[0])) {
 		mofa.currentTokenType = "IDENTIFIER"
 	} else {
-		//print(paste("Unknown token:", self$currentToken))
+		print("Unknown token:" + mofa.CurrentToken)
 	}
 
 	// print(paste("DEBUG :", self$currentTokenType))
@@ -184,7 +184,7 @@ func KeyWord(mofa JackTokenizer) string {
 func Symbol(mofa JackTokenizer) string {
 	if mofa.currentTokenType == "SYMBOL" {
 		//    return(substr(self$currentToken, 1, 1))      ## currentToken[0]
-		return mofa.CurrentToken
+		return strings.ToUpper(mofa.CurrentToken)
 	} else {
 		//    print("Current token is not a symbol!")
 		return ""
@@ -307,7 +307,7 @@ func TabIsDigitsRegex(a string) bool {
 /////////////////////////////////////////////////////////////////////////////////
 func TabIsStringConst(a string) bool {
 	var l []byte
-	l = append(l, '\\', '^', '\n')
+	l = append(l, '"')
 
 	for _, b := range l {
 		if string(b) == a {
